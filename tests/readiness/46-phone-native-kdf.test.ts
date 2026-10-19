@@ -136,7 +136,8 @@ describe('phone native Argon2id', () => {
     } finally {
       setNativeArgon2ForTests(undefined);
     }
-  });
+    // Several Argon2id derivations; a quiet runner finishes near 22s and a busy one exceeds 30s.
+  }, 60_000);
 
   it('keeps a caller progress error from being treated as a native failure', async () => {
     let nativeCalls = 0;
