@@ -1,0 +1,36 @@
+{
+  "phase": "before",
+  "records": 1000,
+  "synthetic": true,
+  "warmupExcluded": true,
+  "swipesPerSample": 8,
+  "samples": [
+    {
+      "sample": 1,
+      "fixtureReadyObservedMs": 46957,
+      "pssKiB": 448305,
+      "nativeViews": 7020,
+      "renderedFrames": 1241,
+      "jankyFrames": 14,
+      "jankyPercent": 1.13
+    },
+    {
+      "sample": 2,
+      "fixtureReadyObservedMs": 84492,
+      "pssKiB": 447660,
+      "nativeViews": 7024,
+      "renderedFrames": 2095,
+      "jankyFrames": 256,
+      "jankyPercent": 12.22
+    },
+    {
+      "sample": 3,
+      "fixtureReadyObservedMs": 69492,
+      "pssKiB": 453804,
+      "nativeViews": 7020,
+      "renderedFrames": 1871,
+      "jankyFrames": 38,
+      "jankyPercent": 2.03
+    }
+  ]
+}

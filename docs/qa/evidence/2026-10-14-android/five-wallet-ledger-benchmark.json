@@ -1,0 +1,204 @@
+{
+  "execution": "Host Node SDK; independent ledger validation, not Android UI timing",
+  "endpoint": "wss://s.altnet.rippletest.net:51233",
+  "samples": [
+    {
+      "sample": 1,
+      "connectionMs": 625,
+      "allBalancesMs": 207,
+      "allHistoriesMs": 203,
+      "aggregateDrops": "399999988",
+      "balances": [
+        {
+          "label": "Wallet 1",
+          "address": "rnD4hp98yng4NDKRjEqJB7aKmoz7kZAtpR",
+          "balanceDrops": "98999988",
+          "requestMs": 100
+        },
+        {
+          "label": "Wallet 2",
+          "address": "racE9LYJ3f4ng14vAUVZYZkd8ZoVcY915Y",
+          "balanceDrops": "100000000",
+          "requestMs": 205
+        },
+        {
+          "label": "Wallet 3",
+          "address": "rnH8coaA9ySTGY2sGiwc7KhSPcHeUuVey7",
+          "balanceDrops": "100000000",
+          "requestMs": 205
+        },
+        {
+          "label": "Wallet 4",
+          "address": "rBcZLgg6NLNZ8Wsr8XDDpkAKbuQoovzo6u",
+          "balanceDrops": "100000000",
+          "requestMs": 205
+        },
+        {
+          "label": "Wallet 5",
+          "address": "rGR7y9ZRGnwhzkd5d9vEiUXUMzwvwUe78s",
+          "balanceDrops": "1000000",
+          "requestMs": 205
+        }
+      ],
+      "histories": [
+        {
+          "label": "Wallet 1",
+          "entries": 2,
+          "requestMs": 122
+        },
+        {
+          "label": "Wallet 2",
+          "entries": 1,
+          "requestMs": 122
+        },
+        {
+          "label": "Wallet 3",
+          "entries": 1,
+          "requestMs": 123
+        },
+        {
+          "label": "Wallet 4",
+          "entries": 1,
+          "requestMs": 202
+        },
+        {
+          "label": "Wallet 5",
+          "entries": 1,
+          "requestMs": 202
+        }
+      ]
+    },
+    {
+      "sample": 2,
+      "connectionMs": 590,
+      "allBalancesMs": 216,
+      "allHistoriesMs": 169,
+      "aggregateDrops": "399999988",
+      "balances": [
+        {
+          "label": "Wallet 1",
+          "address": "rnD4hp98yng4NDKRjEqJB7aKmoz7kZAtpR",
+          "balanceDrops": "98999988",
+          "requestMs": 91
+        },
+        {
+          "label": "Wallet 2",
+          "address": "racE9LYJ3f4ng14vAUVZYZkd8ZoVcY915Y",
+          "balanceDrops": "100000000",
+          "requestMs": 215
+        },
+        {
+          "label": "Wallet 3",
+          "address": "rnH8coaA9ySTGY2sGiwc7KhSPcHeUuVey7",
+          "balanceDrops": "100000000",
+          "requestMs": 215
+        },
+        {
+          "label": "Wallet 4",
+          "address": "rBcZLgg6NLNZ8Wsr8XDDpkAKbuQoovzo6u",
+          "balanceDrops": "100000000",
+          "requestMs": 215
+        },
+        {
+          "label": "Wallet 5",
+          "address": "rGR7y9ZRGnwhzkd5d9vEiUXUMzwvwUe78s",
+          "balanceDrops": "1000000",
+          "requestMs": 215
+        }
+      ],
+      "histories": [
+        {
+          "label": "Wallet 1",
+          "entries": 2,
+          "requestMs": 90
+        },
+        {
+          "label": "Wallet 2",
+          "entries": 1,
+          "requestMs": 90
+        },
+        {
+          "label": "Wallet 3",
+          "entries": 1,
+          "requestMs": 91
+        },
+        {
+          "label": "Wallet 4",
+          "entries": 1,
+          "requestMs": 168
+        },
+        {
+          "label": "Wallet 5",
+          "entries": 1,
+          "requestMs": 168
+        }
+      ]
+    },
+    {
+      "sample": 3,
+      "connectionMs": 562,
+      "allBalancesMs": 240,
+      "allHistoriesMs": 180,
+      "aggregateDrops": "399999988",
+      "balances": [
+        {
+          "label": "Wallet 1",
+          "address": "rnD4hp98yng4NDKRjEqJB7aKmoz7kZAtpR",
+          "balanceDrops": "98999988",
+          "requestMs": 93
+        },
+        {
+          "label": "Wallet 2",
+          "address": "racE9LYJ3f4ng14vAUVZYZkd8ZoVcY915Y",
+          "balanceDrops": "100000000",
+          "requestMs": 239
+        },
+        {
+          "label": "Wallet 3",
+          "address": "rnH8coaA9ySTGY2sGiwc7KhSPcHeUuVey7",
+          "balanceDrops": "100000000",
+          "requestMs": 239
+        },
+        {
+          "label": "Wallet 4",
+          "address": "rBcZLgg6NLNZ8Wsr8XDDpkAKbuQoovzo6u",
+          "balanceDrops": "100000000",
+          "requestMs": 239
+        },
+        {
+          "label": "Wallet 5",
+          "address": "rGR7y9ZRGnwhzkd5d9vEiUXUMzwvwUe78s",
+          "balanceDrops": "1000000",
+          "requestMs": 239
+        }
+      ],
+      "histories": [
+        {
+          "label": "Wallet 1",
+          "entries": 2,
+          "requestMs": 87
+        },
+        {
+          "label": "Wallet 2",
+          "entries": 1,
+          "requestMs": 87
+        },
+        {
+          "label": "Wallet 3",
+          "entries": 1,
+          "requestMs": 87
+        },
+        {
+          "label": "Wallet 4",
+          "entries": 1,
+          "requestMs": 179
+        },
+        {
+          "label": "Wallet 5",
+          "entries": 1,
+          "requestMs": 179
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "date": "2026-10-15",
+  "generatedAt": "2026-10-15T12:40:30.445Z",
+  "status": "changed",
+  "headline": "Changes in 6 areas of the code that protects your keys.",
+  "summary": "7 security-sensitive files changed today, covering the approval and signing flow, the wallet interface, the wallet screens, email confirmation, anonymous usage counters and wallet code. 6 more files are now watched every day. Every change is in the code we publish, so you can read the difference yourself in the audit repository.",
+  "filesWatched": 120,
+  "changes": [
+    {
+      "path": "src/ledgerly/core/engine/engine.ts",
+      "kind": "modified",
+      "area": "the approval and signing flow"
+    },
+    {
+      "path": "src/ledgerly/ui/components/RecipientSuggestions.tsx",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/components/TokenTicker.tsx",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/metrics.ts",
+      "kind": "modified",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/recipients.ts",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/views/Contacts.tsx",
+      "kind": "modified",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/views/Send.tsx",
+      "kind": "modified",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/lib/activity-record.server.ts",
+      "kind": "now watched",
+      "area": "anonymous usage counters"
+    },
+    {
+      "path": "src/lib/activity-report.ts",
+      "kind": "now watched",
+      "area": "anonymous usage counters"
+    },
+    {
+      "path": "src/lib/confirm-email.ts",
+      "kind": "modified",
+      "area": "email confirmation"
+    },
+    {
+      "path": "src/lib/metrics.functions.ts",
+      "kind": "modified",
+      "area": "anonymous usage counters"
+    },
+    {
+      "path": "src/routes/__root.tsx",
+      "kind": "modified",
+      "area": "wallet code"
+    },
+    {
+      "path": "src/routes/api/public/activity.ts",
+      "kind": "now watched",
+      "area": "anonymous usage counters"
+    }
+  ],
+  "areas": [
+    "the approval and signing flow",
+    "the wallet interface",
+    "the wallet screens",
+    "email confirmation",
+    "anonymous usage counters",
+    "wallet code"
+  ],
+  "fullAudit": "vulnerability-scan.md"
+}

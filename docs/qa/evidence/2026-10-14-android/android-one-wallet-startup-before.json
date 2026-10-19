@@ -1,0 +1,116 @@
+{
+  "package": "com.accountabul.ledgerly.dev",
+  "build": "debug",
+  "wallets": 1,
+  "ui_observation_includes_adb_and_uiautomator": true,
+  "samples": [
+    {
+      "mode": "cold",
+      "sample": 1,
+      "android_ms": {
+        "TotalTime": 4742,
+        "WaitTime": 4750
+      },
+      "reported_launch_state": "COLD",
+      "ui_observed_ms": 18308,
+      "screen": "wallet-unlock",
+      "process_retained": false
+    },
+    {
+      "mode": "cold",
+      "sample": 2,
+      "android_ms": {
+        "TotalTime": 4873,
+        "WaitTime": 4958
+      },
+      "reported_launch_state": "COLD",
+      "ui_observed_ms": 20483,
+      "screen": "wallet-unlock",
+      "process_retained": false
+    },
+    {
+      "mode": "cold",
+      "sample": 3,
+      "android_ms": {
+        "TotalTime": 5659,
+        "WaitTime": 5698
+      },
+      "reported_launch_state": "COLD",
+      "ui_observed_ms": 22238,
+      "screen": "wallet-unlock",
+      "process_retained": false
+    },
+    {
+      "mode": "warm-recreate",
+      "sample": 1,
+      "android_ms": {
+        "TotalTime": 917,
+        "WaitTime": 1087
+      },
+      "reported_launch_state": "WARM",
+      "ui_observed_ms": 4813,
+      "screen": "wallet-unlock",
+      "process_retained": true
+    },
+    {
+      "mode": "warm-recreate",
+      "sample": 2,
+      "android_ms": {
+        "TotalTime": 281,
+        "WaitTime": 290
+      },
+      "reported_launch_state": "WARM",
+      "ui_observed_ms": 3493,
+      "screen": "wallet-unlock",
+      "process_retained": true
+    },
+    {
+      "mode": "warm-recreate",
+      "sample": 3,
+      "android_ms": {
+        "TotalTime": 244,
+        "WaitTime": 247
+      },
+      "reported_launch_state": "WARM",
+      "ui_observed_ms": 3818,
+      "screen": "wallet-unlock",
+      "process_retained": true
+    },
+    {
+      "mode": "hot-resume",
+      "sample": 1,
+      "android_ms": {
+        "TotalTime": 290,
+        "WaitTime": 294
+      },
+      "reported_launch_state": "HOT",
+      "ui_observed_ms": 3336,
+      "screen": "wallet-unlock",
+      "process_retained": true
+    },
+    {
+      "mode": "hot-resume",
+      "sample": 2,
+      "android_ms": {
+        "TotalTime": 258,
+        "WaitTime": 337
+      },
+      "reported_launch_state": "HOT",
+      "ui_observed_ms": 3531,
+      "screen": "wallet-unlock",
+      "process_retained": true
+    },
+    {
+      "mode": "hot-resume",
+      "sample": 3,
+      "android_ms": {
+        "TotalTime": 275,
+        "WaitTime": 287
+      },
+      "reported_launch_state": "HOT",
+      "ui_observed_ms": 3366,
+      "screen": "wallet-unlock",
+      "process_retained": true
+    }
+  ]
+}

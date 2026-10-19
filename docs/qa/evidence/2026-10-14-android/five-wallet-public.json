@@ -1,0 +1,37 @@
+[
+  {
+    "label": "Wallet 1",
+    "id": "95bef9c6ebd7efe6ef356eea06b13a86",
+    "address": "rnD4hp98yng4NDKRjEqJB7aKmoz7kZAtpR",
+    "source": "derived",
+    "backupVerified": true
+  },
+  {
+    "label": "Wallet 2",
+    "id": "eb20478fedbab5662b554dee98eba4ca",
+    "address": "racE9LYJ3f4ng14vAUVZYZkd8ZoVcY915Y",
+    "source": "ownPhrase",
+    "backupVerified": true
+  },
+  {
+    "label": "Wallet 3",
+    "id": "1d4f4dbd5b4e43af67db8c8e96e688de",
+    "address": "rnH8coaA9ySTGY2sGiwc7KhSPcHeUuVey7",
+    "source": "ownPhrase",
+    "backupVerified": true
+  },
+  {
+    "label": "Wallet 4",
+    "id": "fecd704e393e8ead8919f0ccb5f1fb4e",
+    "address": "rBcZLgg6NLNZ8Wsr8XDDpkAKbuQoovzo6u",
+    "source": "ownPhrase",
+    "backupVerified": true
+  },
+  {
+    "label": "Wallet 5",
+    "id": "adac1531e70341e11f093d25d9d9087e",
+    "address": "rGR7y9ZRGnwhzkd5d9vEiUXUMzwvwUe78s",
+    "source": "ownPhrase",
+    "backupVerified": true
+  }
+]

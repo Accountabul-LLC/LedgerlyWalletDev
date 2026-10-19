@@ -1,0 +1,11 @@
+{
+  "date": "2026-08-15",
+  "generatedAt": "2026-08-15T07:47:04.112Z",
+  "status": "unchanged",
+  "headline": "",
+  "summary": "No file that handles your keys, your recovery phrase or your transactions changed today. The wallet behaves exactly as it did in the last published audit.",
+  "filesWatched": 45,
+  "changes": [],
+  "areas": [],
+  "fullAudit": "2026-08-12-full-security-audit.md"
+}

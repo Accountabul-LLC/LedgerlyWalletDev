@@ -1,0 +1,52 @@
+name: Daily code report
+
+# Writes one Chicago-calendar-day report into docs/security/reports/.
+# Only the scheduled run on main may commit. workflow_dispatch, pull
+# requests and every other branch print the diff and leave the files alone.
+# This job hashes public source. It does not read or print secrets, and it
+# does not write the production security_reports table. That write is the
+# production hook at /api/public/hooks/daily-audit, which pg_cron calls.
+# The hook stays dark while the Vercel project is paused.
+
+on:
+  schedule:
+    # 06:17 UTC is 01:17 America/Chicago, still the same Chicago calendar day.
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Publish today's report
+        if: github.event_name == 'schedule' && github.ref == 'refs/heads/main'
+        run: bun run scripts/daily-audit.ts
+
+      - name: Check only outside the scheduled main run
+        if: github.event_name != 'schedule' || github.ref != 'refs/heads/main'
+        run: bun run scripts/daily-audit.ts --check
+
+      - name: Commit the report
+        if: github.event_name == 'schedule' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "ledgerly-audit-bot"
+          git config user.email "audit-bot@users.noreply.github.com"
+          git add docs/security/reports
+          if git diff --cached --quiet; then
+            echo "No report changes to commit."
+            exit 0
+          fi
+          day="$(bun -e 'const { reportCalendarDay } = await import("./src/lib/report-calendar.ts"); console.log(reportCalendarDay())')"
+          git commit -m "chore(security): daily code report ${day}"
+          git push origin HEAD:main

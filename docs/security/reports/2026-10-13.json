@@ -1,0 +1,88 @@
+{
+  "date": "2026-10-13",
+  "generatedAt": "2026-10-13T21:36:40.442Z",
+  "status": "changed",
+  "headline": "Changes in 5 areas of the code that protects your keys.",
+  "summary": "6 security-sensitive files changed today, covering the wallet interface, the wallet screens, ledger payment checks, anonymous usage counters and browser security headers. 8 more files are now watched every day. Every change is in the code we publish, so you can read the difference yourself in the audit repository.",
+  "filesWatched": 104,
+  "changes": [
+    {
+      "path": "src/integrations/supabase/auth-middleware.ts",
+      "kind": "now watched",
+      "area": "wallet code"
+    },
+    {
+      "path": "src/integrations/supabase/client.ts",
+      "kind": "now watched",
+      "area": "wallet code"
+    },
+    {
+      "path": "src/integrations/supabase/config.ts",
+      "kind": "now watched",
+      "area": "wallet code"
+    },
+    {
+      "path": "src/integrations/supabase/oauth.ts",
+      "kind": "now watched",
+      "area": "wallet code"
+    },
+    {
+      "path": "src/ledgerly/ui/components/ActivityCounters.tsx",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/external/wallet-directory.ts",
+      "kind": "modified",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/metrics.ts",
+      "kind": "modified",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/views/Onboarding.tsx",
+      "kind": "modified",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/lib/ledger-payment.ts",
+      "kind": "modified",
+      "area": "ledger payment checks"
+    },
+    {
+      "path": "src/lib/metrics.functions.ts",
+      "kind": "modified",
+      "area": "anonymous usage counters"
+    },
+    {
+      "path": "src/lib/security-headers.ts",
+      "kind": "modified",
+      "area": "browser security headers"
+    },
+    {
+      "path": "src/routes/auth_.callback.tsx",
+      "kind": "now watched",
+      "area": "wallet code"
+    },
+    {
+      "path": "src/routes/auth.tsx",
+      "kind": "now watched",
+      "area": "wallet code"
+    },
+    {
+      "path": "src/routes/reset-password.tsx",
+      "kind": "now watched",
+      "area": "wallet code"
+    }
+  ],
+  "areas": [
+    "the wallet interface",
+    "the wallet screens",
+    "ledger payment checks",
+    "anonymous usage counters",
+    "browser security headers"
+  ],
+  "fullAudit": "vulnerability-scan.md"
+}

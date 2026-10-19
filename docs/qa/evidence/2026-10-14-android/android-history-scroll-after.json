@@ -1,0 +1,44 @@
+{
+  "phase": "after",
+  "records": 1000,
+  "swipesPerSample": 8,
+  "startupExcluded": true,
+  "samples": [
+    {
+      "sample": 1,
+      "renderedFrames": 113,
+      "jankyFrames": 20,
+      "jankyPercent": 17.7,
+      "durationPercentilesMs": {
+        "50": 57,
+        "90": 101,
+        "95": 150,
+        "99": 250
+      }
+    },
+    {
+      "sample": 2,
+      "renderedFrames": 127,
+      "jankyFrames": 15,
+      "jankyPercent": 11.81,
+      "durationPercentilesMs": {
+        "50": 53,
+        "90": 77,
+        "95": 113,
+        "99": 200
+      }
+    },
+    {
+      "sample": 3,
+      "renderedFrames": 117,
+      "jankyFrames": 17,
+      "jankyPercent": 14.53,
+      "durationPercentilesMs": {
+        "50": 46,
+        "90": 77,
+        "95": 97,
+        "99": 150
+      }
+    }
+  ]
+}

@@ -1,0 +1,122 @@
+{
+  "date": "2026-10-14",
+  "generatedAt": "2026-10-15T01:17:03.236Z",
+  "status": "changed",
+  "headline": "Changes in 4 areas of the code that protects your keys.",
+  "summary": "9 security-sensitive files changed today, covering wallet code, Google sign-in, the wallet interface and anonymous usage counters. 12 more files are now watched every day. Every change is in the code we publish, so you can read the difference yourself in the audit repository.",
+  "filesWatched": 117,
+  "changes": [
+    {
+      "path": "src/integrations/supabase/client.ts",
+      "kind": "modified",
+      "area": "wallet code"
+    },
+    {
+      "path": "src/integrations/supabase/oauth-callback.ts",
+      "kind": "now watched",
+      "area": "Google sign-in"
+    },
+    {
+      "path": "src/integrations/supabase/oauth.ts",
+      "kind": "modified",
+      "area": "Google sign-in"
+    },
+    {
+      "path": "src/ledgerly/ui/components/SiteHeader.tsx",
+      "kind": "modified",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/metrics.ts",
+      "kind": "modified",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/useSignedIn.ts",
+      "kind": "modified",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/lib/activity-record.server.ts",
+      "kind": "now watched",
+      "area": "anonymous usage counters"
+    },
+    {
+      "path": "src/lib/activity-report.ts",
+      "kind": "now watched",
+      "area": "anonymous usage counters"
+    },
+    {
+      "path": "src/lib/auth-entry.ts",
+      "kind": "now watched",
+      "area": "wallet code"
+    },
+    {
+      "path": "src/lib/confirm-email.functions.ts",
+      "kind": "now watched",
+      "area": "email confirmation"
+    },
+    {
+      "path": "src/lib/confirm-email.server.ts",
+      "kind": "now watched",
+      "area": "email confirmation"
+    },
+    {
+      "path": "src/lib/confirm-email.ts",
+      "kind": "now watched",
+      "area": "email confirmation"
+    },
+    {
+      "path": "src/lib/email-confirmed.ts",
+      "kind": "now watched",
+      "area": "email confirmation"
+    },
+    {
+      "path": "src/lib/history-session.ts",
+      "kind": "now watched",
+      "area": "wallet code"
+    },
+    {
+      "path": "src/lib/metrics.functions.ts",
+      "kind": "modified",
+      "area": "anonymous usage counters"
+    },
+    {
+      "path": "src/routes/__root.tsx",
+      "kind": "now watched",
+      "area": "wallet code"
+    },
+    {
+      "path": "src/routes/api/public/activity.ts",
+      "kind": "now watched",
+      "area": "anonymous usage counters"
+    },
+    {
+      "path": "src/routes/auth_.callback.tsx",
+      "kind": "modified",
+      "area": "Google sign-in"
+    },
+    {
+      "path": "src/routes/auth_.confirm.tsx",
+      "kind": "now watched",
+      "area": "email confirmation"
+    },
+    {
+      "path": "src/routes/auth.tsx",
+      "kind": "modified",
+      "area": "wallet code"
+    },
+    {
+      "path": "src/routes/reset-password.tsx",
+      "kind": "modified",
+      "area": "wallet code"
+    }
+  ],
+  "areas": [
+    "wallet code",
+    "Google sign-in",
+    "the wallet interface",
+    "anonymous usage counters"
+  ],
+  "fullAudit": "vulnerability-scan.md"
+}

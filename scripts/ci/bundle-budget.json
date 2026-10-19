@@ -1,0 +1,6 @@
+{
+  "measuredGzipBytes": 475076,
+  "budgetGzipBytes": 546338,
+  "marginRatio": 0.15,
+  "note": "Gzip size of .output/public/assets JavaScript and CSS. The budget is that baseline plus 15 percent."
+}

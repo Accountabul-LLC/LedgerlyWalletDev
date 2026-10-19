@@ -1,0 +1,256 @@
+{
+  "baselineCommit": "9b110f2",
+  "mode": "independent read-only source review and synthetic local probes",
+  "liveAttackCalls": 0,
+  "secretsAccessed": false,
+  "findings": [
+    {
+      "id": "RED-01",
+      "severity": "high",
+      "title": "Interrupted vault update destroys previous ciphertext",
+      "file": "mobile/src/storage.ts",
+      "line": 94,
+      "proof": "/workspace/shared/red-team-probes/storage-result.json",
+      "observed": {
+        "oldRecordPreserved": false,
+        "mixedRecordAccepted": true,
+        "orphanRawEntriesAfterClear": 3
+      },
+      "recommendation": "Write immutable generation chunks, publish pointer last, serialize writes/index updates and bound counts; preserve legacy record until replacement commits.",
+      "retest": {
+        "status": "fixed in current working tree",
+        "evidence": "31-device-storage-atomic8/8 passed: interruption beforepublication, globalserialization, Unicodebytebounds, legacy migration, boundedcorruptcounts, reclaimfirstwrite. Original actualDeviceStore faultprobe now oldRecordPreserved:true,mixedRecordAccepted:false,orphansAfterClear:0."
+      }
+    },
+    {
+      "id": "RED-02",
+      "severity": "medium",
+      "title": "Profile bearer and refresh tokens persist outside platform secure storage",
+      "file": "mobile/src/supabase.ts",
+      "line": 38,
+      "proof": "Supabase createClient auth.storage receives AsyncStorage with persistSession:true; package default session serialization contains bearer/refresh credentials. No user data accessed.",
+      "recommendation": "Use chunked, crash-consistent SecureStore session adapter; explicit private keychain options; remove legacy AsyncStorage token and handle unavailable secure storage by failing closed.",
+      "retest": {
+        "status": "fixed in current working tree",
+        "evidence": "Supabaseauth now secure-only AtomicStore-backed sessionadapter with WHEN_UNLOCKED_THIS_DEVICE_ONLY and privatekeychainservice. Migration/logout wholeadapter serialized, legacyplaintext removed even onsecurefailure,8/8 tests pass without real tokens."
+      }
+    },
+    {
+      "id": "RED-03",
+      "severity": "high",
+      "title": "Prepared payment not bound to native network context",
+      "file": "mobile/src/runtime.ts",
+      "line": 57,
+      "relatedFiles": ["mobile/src/app/send.tsx:119", "src/ledgerly/core/engine/engine.ts:752"],
+      "proof": "Native dispatch forwards prepare/confirm and setNetwork independently; engine setNetwork does not clear prepared entries, confirmPrepared signs stored transaction against current connection; screen warning uses current network rather than preparation network. Source proof only, no live transaction sent.",
+      "recommendation": "Bind prepared request IDs to network generation at host boundary; invalidate/discard on network change and reject late prepares and old confirmations. Keep mirrored core unchanged.",
+      "retest": {
+        "status": "fixed in current working tree",
+        "evidence": "Independent actual-runtime/mock-engine approval probes pass stale network confirmation (0 engine calls), late preparation rejection/discard, in-flight network prepare rejection (0 calls), duplicate confirmation (1 call). Context-changing mutations are serialized and generation-bound; prepare/trust/confirm verify displayed network matches connection."
+      }
+    },
+    {
+      "id": "RED-04",
+      "severity": "medium",
+      "title": "Stale portfolio and missing token silently change payment to XRP",
+      "file": "mobile/src/app/send.tsx",
+      "line": 84,
+      "proof": "Effect .then(setPortfolio) commits out-of-order account/network reads; selectedToken is missing after refreshed tokens disappear, then ternary submits kind:xrp regardless of selected asset.",
+      "recommendation": "Latest-request correlation, clear portfolio on context changes, resolve selection explicitly and reject unknown/removed issued assets.",
+      "retest": {
+        "status": "fixed in current working tree",
+        "evidence": "Independent actualSendScreen source withsyntheticReacthooks/nativewallet harness: oldaccountportfoliorejected, editedlatepreparationdiscardedandreviewhidden, missingselectedassetdisabled, noXRPfallbackcall. /workspace/shared/red-team-probes/send-screen-result.json."
+      }
+    },
+    {
+      "id": "RED-05",
+      "severity": "medium",
+      "title": "Device erase always rejects due to confirmation literal mismatch",
+      "file": "mobile/src/app/unlock.tsx",
+      "line": 123,
+      "relatedFiles": ["mobile/src/app/(tabs)/settings.tsx"],
+      "proof": "/workspace/shared/red-team-probes/reset-result.json",
+      "observed": {
+        "accepted": false,
+        "error": "Type ERASE to confirm."
+      },
+      "recommendation": "Use engine ERASE confirmation contract consistently and surface operation failure.",
+      "retest": {
+        "status": "fixed in current working tree",
+        "evidence": "Both Settings andUnlock now pass ERASE; Unlockshowsmatchingconfirmationfield and catchesfailure. Actualruntime syntheticERASEprobe accepted:true withoutwallet/KDF."
+      }
+    },
+    {
+      "id": "RED-06",
+      "severity": "medium",
+      "title": "Profile sign-out leaves native wallet unlocked",
+      "file": "mobile/src/app/profile.tsx",
+      "line": 125,
+      "relatedFiles": ["mobile/src/app/(tabs)/settings.tsx"],
+      "proof": "Both sign-out handlers only call supabase.auth.signOut, and WalletRoot has no auth observer to call wallet.lock. Architecture requires sign-out while locking.",
+      "recommendation": "Immediately lock local snapshot/runtime when signout begins, clear sensitive UI, then sign out backend and handle errors.",
+      "retest": {
+        "status": "fixed in current working tree",
+        "evidence": "Both profile and settings invoke signOutAndLock; helper test verifies snapshot and engine locking precede network logout even when network logout fails."
+      }
+    },
+    {
+      "id": "RED-07",
+      "severity": "medium",
+      "title": "Malformed null token row aborts whole backend sync",
+      "file": "src/routes/api/public/tokens/sync.ts",
+      "line": 113,
+      "proof": "External array is cast UpstreamToken[] and .filter dereferences token.currency without nonnull/object checks; null row throws outside upstream catch. Local synthetic source probe, no production calls.",
+      "recommendation": "Shape-check each row and nested metadata before property access; bounded response bytes before JSON parse.",
+      "retest": {
+        "status": "fixed in current working tree",
+        "evidence": "tests/readiness/27-market-proxy.test.ts: null/array/malformed row and nested-metadata synthetic tests passed; sync now filters records and bounds streamed JSON bytes"
+      }
+    },
+    {
+      "id": "RED-08",
+      "severity": "medium",
+      "title": "HTTPS logo guard accepts private-address and credential URLs",
+      "file": "src/lib/ingest-guards.ts",
+      "line": 44,
+      "proof": "safeImageUrl accepts any https URL including https://127.0.0.1/logo.png and https://user:password@host/logo.png; new native remote image loader would fetch attacker-chosen destinations. No request issued.",
+      "recommendation": "Use exact curated image host allowlist with no auth/ports and reject local/private URLs; ensure logos remain untrusted display decoration and do not influence signing/trust.",
+      "retest": {
+        "status": "fixed for native market/logo boundary and literal unsafe URLs",
+        "evidence": "21 relevant market tests passed; native logos derive issuer+currency identity and use first-party fixed-path proxy. Proxy requests fixed api.xrpl.to origin, rejects redirect, caps raster bytes/dimensions/concurrency/cache. Legacy safeImageUrl rejects credentials, literal IPs, local names, SVG and nonHTTPS.",
+        "limitation": "Legacy web safeImageUrl still accepts arbitrary public DNS names; it does not resolve DNS or guard against public-name DNS mapping to private hosts. Native market does not use those arbitrary URLs."
+      }
+    },
+    {
+      "id": "RED-09",
+      "severity": "medium",
+      "title": "Invalid null market identity passes snapshot cache validation",
+      "file": "src/ledgerly/native/market-data.ts",
+      "line": 152,
+      "proof": "/workspace/shared/red-team-probes/market-retest-result.json",
+      "observed": {
+        "invalidIdentity": null,
+        "nullIdentitySnapshotAccepted": true
+      },
+      "recommendation": "Require nonnull valid derived identity and exact string ID before accepting cache/proxy assets; add null-ID regression.",
+      "retest": {
+        "status": "fixed in current working tree",
+        "evidence": "Actual source probe now nullIdentitySnapshotAccepted:false and21/21 market tests pass; validator requires nonnull canonical identity, exact stringid andpositivefetchedAt."
+      }
+    },
+    {
+      "id": "RED-10",
+      "severity": "medium",
+      "title": "Anonymous market polling interval bypassed by focus/manual refresh",
+      "file": "src/ledgerly/native/market-client.ts",
+      "line": 91,
+      "proof": "/workspace/shared/red-team-probes/market-rate-result.json",
+      "observed": {
+        "loadsForTenManualAttempts61SecondsApart": 10,
+        "anonymousProviderCalls": 20
+      },
+      "recommendation": "Set minimum request cooldown to600000ms for anonymous direct mode and60000ms for approved proxy; enforce in service for all triggers and rate-limit retries, not only hook interval.",
+      "retest": {
+        "status": "fixed in current working tree",
+        "evidence": "MarketClient minimumRefreshMs configurable; native chooses600000ms anonymous/60000ms proxy. Independent actual-source probe10 requests61sec apart now loads1;21/21 relevanttests pass."
+      }
+    },
+    {
+      "id": "RED-11",
+      "severity": "medium",
+      "title": "Hiding Testnet changes displayed network without switching native connection",
+      "file": "mobile/src/runtime.ts",
+      "line": 114,
+      "relatedFiles": ["src/ledgerly/core/engine/engine.ts:811"],
+      "proof": "/workspace/shared/red-team-probes/preferences-network-result.json",
+      "observed": {
+        "before": {
+          "displayNetwork": "testnet",
+          "connectionNetwork": "testnet"
+        },
+        "after": {
+          "displayNetwork": "mainnet",
+          "connectionNetwork": "testnet"
+        },
+        "mismatched": true
+      },
+      "recommendation": "At nativehost mark preferencesmutation asnetworkchange barrier andsynchronize engine.setNetwork to effectivegetState().network.id beforeallowingnewprepares. Keepmirrorcoreuntouched.",
+      "probeScope": "Actual runtimeandengine withpublic MemoryStoreprefs only; uninitializedwallet;noKDF,secrets orWebSocketconnect.",
+      "retest": {
+        "status": "fixed in current working tree with fail-closed recovery",
+        "evidence": "Actual public-preferences probe now display=mainnet, connection=mainnet after hiding Testnet. Failed durable network write can still leave mirrored engine state mismatched, but native prepare/trust/confirm refuse it before any engine account/vault/signing access; actual failure probe returns wallet-or-network-changed error. 33-native-approval-security9/9 passed including mismatch0enginecalls.",
+        "limitation": "Underlying mirrored engine mismatch after storage write failure is not changed; native host blocks sensitive transaction methods until a successful explicit network selection resynchronizes state."
+      }
+    }
+  ],
+  "releaseGate": "Production candidate shares decrypted engine heap with UI and exposes signing/recovery. Full native isolated signing boundary remains documented release prerequisite; allowlist alone is not isolation.",
+  "independentRetest": {
+    "tests": "27-market-proxy + 28-market-client",
+    "passed": 21,
+    "failed": 0,
+    "liveAttackCalls": 0,
+    "additionalProductObservation": "Foreground quotes now refresh only while screen focused and AppState active. Anonymous10min/proxy60sec intervals are also enforced by service against all manual/focus triggers. RED10 independent probe passes."
+  },
+  "independentNativeRetest": {
+    "suites": [
+      "27-market-proxy",
+      "28-market-client",
+      "31-device-storage-atomic",
+      "32-send-context",
+      "33-native-approval-security"
+    ],
+    "passed": 45,
+    "failed": 0,
+    "actualKdfRuns": 0,
+    "secretAccess": false,
+    "liveCalls": 0,
+    "additionalActualSourceProbes": [
+      "original DeviceStore interruption",
+      "native ERASE",
+      "market null identity",
+      "anonymous rate budget",
+      "approval stale/late/inflight/duplicate",
+      "SendScreen stale portfolio/edit/missing token",
+      "preferences network fallback",
+      "failed network persistence blocked before wallet access"
+    ],
+    "mirroredCoreChanged": false
+  },
+  "finalReview": "All eleven identified findings are fixed within native host/market scope in the current working tree and independently retested. Approved isolated native signing boundary and real physical-device security/performance validation remain release prerequisites. No claim of a complete penetration test or physical-device audit.",
+  "implementationBranch": "codex/android-market-security",
+  "validation": {
+    "fullSuite": {
+      "passed": 255,
+      "failed": 0,
+      "files": 32
+    },
+    "independentFocusedSuite": {
+      "passed": 45,
+      "failed": 0
+    },
+    "webBuild": "passed",
+    "webTypecheck": "passed",
+    "mobileTypecheck": "passed",
+    "changedSourceLint": "passed",
+    "androidHermesExport": "passed",
+    "mirroredCore": "unchanged",
+    "liveAttackCalls": 0,
+    "secretMaterialAccessed": false
+  },
+  "limitations": [
+    "Provider approval and server key still required for live issued-token logos and first-party cached redistribution.",
+    "Native isolated-signing boundary remains a production-release prerequisite.",
+    "Full vault-backed native flows, physical crash persistence and representative release-device performance are not verified.",
+    "Backend limits/cache are per process, requiring an aggregate deployment budget.",
+    "Legacy browser image URL guard is not DNS-aware; native service uses fixed origins."
+  ],
+  "mainIntegration": {
+    "baseMain": "6dabe380c9691794aa2bdf1f922b7eafed61f3d7",
+    "nativeDependencyHead": "3a046fbf6929ac287e5926d95a74ba4694f3d7ae",
+    "repositoryTests": 255,
+    "developmentAppTests": 23,
+    "typechecks": ["root", "mobile", "apps/mobile"],
+    "webBuild": "passed",
+    "strategy": "merge commits preserve existing history; no native binary release"
+  }
+}

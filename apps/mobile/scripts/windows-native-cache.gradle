@@ -1,0 +1,14 @@
+// Keep generated CMake paths short on Windows; source stays in the repository.
+def localAppData = System.getenv('LOCALAPPDATA')
+if (!localAppData) {
+    throw new GradleException('This Windows build helper requires LOCALAPPDATA.')
+}
+def nativeCache = new File(localAppData, 'LedgerlyAndroidBuild/cxx')
+gradle.beforeProject { project ->
+    def relocateNativeStaging = {
+        def android = project.extensions.getByName('android')
+        android.externalNativeBuild.cmake.buildStagingDirectory = new File(nativeCache, project.name)
+    }
+    project.plugins.withId('com.android.library') { relocateNativeStaging() }
+    project.plugins.withId('com.android.application') { relocateNativeStaging() }
+}

@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Ledgerly Dev",
+    "slug": "ledgerly-dev",
+    "version": "1.0.1",
+    "platforms": ["ios", "android"],
+    "orientation": "portrait",
+    "scheme": "ledgerly-dev",
+    "icon": "./assets/ledgerly-app-icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.accountabul.ledgerly.dev"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#171a18",
+        "foregroundImage": "./assets/ledgerly-adaptive-foreground.png",
+        "monochromeImage": "./assets/ledgerly-adaptive-monochrome.png"
+      },
+      "allowBackup": false,
+      "package": "com.accountabul.ledgerly.dev",
+      "predictiveBackGestureEnabled": false
+    },
+    "owner": "accountabuls",
+    "plugins": ["expo-secure-store", "expo-sqlite", "expo-image"],
+    "experiments": {
+      "autolinkingModuleResolution": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "8fbd1a0a-d66b-48db-9ea5-7706a30f24dc"
+      }
+    }
+  }
+}

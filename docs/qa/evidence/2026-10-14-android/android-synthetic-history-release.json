@@ -1,0 +1,36 @@
+{
+  "phase": "release",
+  "records": 1000,
+  "synthetic": true,
+  "warmupExcluded": true,
+  "swipesPerSample": 8,
+  "samples": [
+    {
+      "sample": 1,
+      "fixtureReadyObservedMs": 3174,
+      "pssKiB": 118089,
+      "nativeViews": 726,
+      "renderedFrames": 125,
+      "jankyFrames": 24,
+      "jankyPercent": 19.2
+    },
+    {
+      "sample": 2,
+      "fixtureReadyObservedMs": 3400,
+      "pssKiB": 110608,
+      "nativeViews": 705,
+      "renderedFrames": 93,
+      "jankyFrames": 36,
+      "jankyPercent": 38.71
+    },
+    {
+      "sample": 3,
+      "fixtureReadyObservedMs": 4247,
+      "pssKiB": 119679,
+      "nativeViews": 684,
+      "renderedFrames": 137,
+      "jankyFrames": 27,
+      "jankyPercent": 19.71
+    }
+  ]
+}

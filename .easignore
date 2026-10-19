@@ -1,0 +1,33 @@
+# EAS builds run from apps/mobile but archive from the repository root because
+# the native app imports src/ledgerly/core. Keep local and secret-bearing data
+# out of that archive explicitly.
+.git/
+.codex-temp/
+output/
+/app.json
+.expo/
+.lovable/
+.output/
+.tanstack/
+.wrangler/
+.vinxi/
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+
+.env
+.env.*
+**/.env
+**/.env.*
+
+docs/family-seed-report.md
+docs/live-wallet-recovery-validation-2026-08-11.md
+docs/live-wallet-recovery-post-update-retest-2026-08-11.md
+
+*.jks
+*.keystore
+*.p8
+*.p12
+*.pem
+*.mobileprovision

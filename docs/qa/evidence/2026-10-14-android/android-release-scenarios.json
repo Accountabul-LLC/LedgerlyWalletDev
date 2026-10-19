@@ -1,0 +1,43 @@
+{
+  "build": "release",
+  "navigation": [
+    {
+      "round": 1,
+      "transitionObservedMs": {
+        "Home": 2508,
+        "Assets": 2523,
+        "Activity": 3434,
+        "Contacts": 2433,
+        "Settings": 2646
+      },
+      "pssKiB": 128536
+    },
+    {
+      "round": 2,
+      "transitionObservedMs": {
+        "Home": 2509,
+        "Assets": 2494,
+        "Activity": 2485,
+        "Contacts": 2486,
+        "Settings": 2558
+      },
+      "pssKiB": 129684
+    },
+    {
+      "round": 3,
+      "transitionObservedMs": {
+        "Home": 3201,
+        "Assets": 2618,
+        "Activity": 2538,
+        "Contacts": 2475,
+        "Settings": 2545
+      },
+      "pssKiB": 129224
+    }
+  ],
+  "observationIncludesAdbUiAutomator": true,
+  "backgroundCpuTicksOver10Seconds": 0,
+  "backgroundRequiresUnlock": true,
+  "networkDropTotalUnavailable": true,
+  "networkRestoreBalancesCorrect": true
+}

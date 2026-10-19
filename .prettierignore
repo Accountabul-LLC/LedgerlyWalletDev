@@ -1,0 +1,15 @@
+node_modules
+dist
+.output
+.vinxi
+coverage
+.lighthouseci
+.supabase
+pnpm-lock.yaml
+package-lock.json
+bun.lock
+routeTree.gen.ts
+# Upstream wallet mirror. It keeps its own formatting so diffs against upstream stay readable.
+src/ledgerly/core
+# Generated each day by the audit bot. Formatting them would fail the next push to main.
+docs/security/reports

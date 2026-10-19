@@ -1,0 +1,17 @@
+title = "Ledgerly secret scan"
+
+[extend]
+useDefault = true
+
+# generic-api-key treats SHA-256 fingerprints and wallet test passwords as
+# credentials. Publishable Supabase keys are public by design. Service-role
+# keys, private keys, and anything under src/, supabase/, or a real .env are
+# still scanned.
+[allowlist]
+description = "Fingerprints, fixtures, and publishable client keys"
+paths = [
+  '''^docs/security/reports/''',
+  '''^tests/''',
+  '''^\.env\.example$''',
+]
+regexes = ['''sb_publishable_[A-Za-z0-9_-]+''']

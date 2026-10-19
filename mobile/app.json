@@ -1,0 +1,71 @@
+{
+  "expo": {
+    "name": "Ledgerly",
+    "slug": "phone-app",
+    "scheme": "ledgerly",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/ledgerly-app-icon.png",
+    "userInterfaceStyle": "light",
+    "owner": "accountabuls",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.accountabul.ledgerly",
+      "buildNumber": "4",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.accountabul.ledgerly",
+      "versionCode": 4,
+      "adaptiveIcon": {
+        "backgroundColor": "#171A18",
+        "foregroundImage": "./assets/ledgerly-adaptive-foreground.png",
+        "monochromeImage": "./assets/ledgerly-adaptive-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true,
+          "faceIDPermission": "Ledgerly can use Face ID only to unlock the encrypted vault on this device."
+        }
+      ],
+      "expo-web-browser",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Ledgerly uses the camera to scan recipient QR codes. It never photographs your recovery phrase."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/ledgerly-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#F5F5EF"
+        }
+      ],
+      "expo-image",
+      "react-native-quick-crypto"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "autolinkingModuleResolution": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f99f929c-665b-4dfd-b158-e2321226f637"
+      }
+    },
+    "platforms": ["ios", "android"]
+  }
+}

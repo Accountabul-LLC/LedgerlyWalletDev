@@ -1,0 +1,19 @@
+{
+  "date": "2026-09-11",
+  "generatedAt": "2026-09-11T06:33:21.635Z",
+  "status": "changed",
+  "headline": "Changes in 1 area of the code that protects your keys.",
+  "summary": "1 security-sensitive file changed today, covering the wallet interface. Every change is in the code we publish, so you can read the difference yourself in the audit repository.",
+  "filesWatched": 96,
+  "changes": [
+    {
+      "path": "src/ledgerly/ui/metrics.ts",
+      "kind": "modified",
+      "area": "the wallet interface"
+    }
+  ],
+  "areas": [
+    "the wallet interface"
+  ],
+  "fullAudit": "vulnerability-scan.md"
+}

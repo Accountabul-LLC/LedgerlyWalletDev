@@ -1,0 +1,20 @@
+[
+  {
+    "wallet": 3,
+    "fundAndRefreshObservedMs": 11698,
+    "balance": "100 XRP",
+    "aggregate": "All 5 wallets: 299.999988 XRP"
+  },
+  {
+    "wallet": 4,
+    "fundAndRefreshObservedMs": 9382,
+    "balance": "100 XRP",
+    "aggregate": "All 5 wallets: 399.999988 XRP"
+  },
+  {
+    "wallet": 5,
+    "fundAndRefreshObservedMs": 14925,
+    "balance": "101.499988 XRP",
+    "aggregate": "All 5 wallets: 499.999928 XRP"
+  }
+]

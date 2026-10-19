@@ -1,0 +1,11 @@
+{
+  "date": "2026-08-11",
+  "generatedAt": "2026-08-11T22:53:35.028Z",
+  "status": "baseline",
+  "headline": "First report. This is the baseline we compare against from now on.",
+  "summary": "No file that handles your keys, your recovery phrase or your transactions changed today. The wallet behaves exactly as it did in the last published audit.",
+  "filesWatched": 45,
+  "changes": [],
+  "areas": [],
+  "fullAudit": "2026-08-12-full-security-audit.md"
+}

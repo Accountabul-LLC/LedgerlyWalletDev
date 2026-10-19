@@ -1,0 +1,37 @@
+{
+  "phase": "before",
+  "wallets": 5,
+  "observationIncludesAdbAndUiAutomator": true,
+  "samples": [
+    {
+      "sample": 1,
+      "unlockToAllBalancesObservedMs": 33649,
+      "appCpuTicksDuringObservedUnlock": 2432,
+      "pssKiB": 284009,
+      "aggregate": "All 5 wallets: 399.999988 XRP",
+      "renderedFrames": 859,
+      "jankyFrames": 19,
+      "jankyPercent": 2.21
+    },
+    {
+      "sample": 2,
+      "unlockToAllBalancesObservedMs": 34631,
+      "appCpuTicksDuringObservedUnlock": 2533,
+      "pssKiB": 284076,
+      "aggregate": "All 5 wallets: 399.999988 XRP",
+      "renderedFrames": 888,
+      "jankyFrames": 20,
+      "jankyPercent": 2.25
+    },
+    {
+      "sample": 3,
+      "unlockToAllBalancesObservedMs": 35543,
+      "appCpuTicksDuringObservedUnlock": 2619,
+      "pssKiB": 284904,
+      "aggregate": "All 5 wallets: 399.999988 XRP",
+      "renderedFrames": 916,
+      "jankyFrames": 22,
+      "jankyPercent": 2.4
+    }
+  ]
+}

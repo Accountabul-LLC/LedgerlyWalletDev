@@ -1,0 +1,44 @@
+{
+  "phase": "release",
+  "records": 1000,
+  "swipesPerSample": 8,
+  "startupExcluded": true,
+  "samples": [
+    {
+      "sample": 1,
+      "renderedFrames": 131,
+      "jankyFrames": 15,
+      "jankyPercent": 11.45,
+      "durationPercentilesMs": {
+        "50": 53,
+        "90": 69,
+        "95": 77,
+        "99": 101
+      }
+    },
+    {
+      "sample": 2,
+      "renderedFrames": 127,
+      "jankyFrames": 14,
+      "jankyPercent": 11.02,
+      "durationPercentilesMs": {
+        "50": 48,
+        "90": 69,
+        "95": 77,
+        "99": 97
+      }
+    },
+    {
+      "sample": 3,
+      "renderedFrames": 119,
+      "jankyFrames": 22,
+      "jankyPercent": 18.49,
+      "durationPercentilesMs": {
+        "50": 53,
+        "90": 81,
+        "95": 97,
+        "99": 105
+      }
+    }
+  ]
+}

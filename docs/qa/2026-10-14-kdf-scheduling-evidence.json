@@ -1,0 +1,58 @@
+{
+  "hostScheduling": {
+    "runtime": "Node 24 host scheduling benchmark; not Android speed",
+    "parameters": {
+      "m": 47104,
+      "t": 1,
+      "p": 1,
+      "version": 19,
+      "dkLen": 32,
+      "asyncTick": 8
+    },
+    "runs": [
+      {
+        "name": "before",
+        "durationMs": 586.2794630000001,
+        "heartbeats": 0,
+        "firstDelayMs": null,
+        "maxGapMs": 0,
+        "outputMatches": true
+      },
+      {
+        "name": "after",
+        "durationMs": 727.880268,
+        "heartbeats": 89,
+        "firstDelayMs": 15.869838000000072,
+        "maxGapMs": 15.869838000000072,
+        "outputMatches": true
+      }
+    ]
+  },
+  "androidBefore": {
+    "completed": false,
+    "observation": "Import did not reach Home during a >7-minute observed window; original form remained visible with an enabled Continue button. Trial aborted by force-stopping disposable Expo Go process. Timing is not a successful import benchmark.",
+    "jsThreadCpuSamplePercentOfOneEmulatedCore": 58.8,
+    "expoGoPssKiB": 378904,
+    "kvmAvailable": false
+  },
+  "androidAfterLoading": {
+    "sampledAtUnix": 1791969737.2873719,
+    "importFormVisible": true,
+    "populatedSecretFields": 3,
+    "continueLabelVisible": false,
+    "homeObserved": false,
+    "loadingRenderObserved": true
+  },
+  "androidAfterImport": {
+    "completed": false,
+    "homeObserved": false,
+    "observationWindowSeconds": 600,
+    "loadingRenderObserved": true,
+    "qualification": "Expo Go debug, Android 10 x86_64 software emulation. No successful import/unlock timing or persistence result."
+  },
+  "cleanup": {
+    "nativeTrialDataCleared": true,
+    "nativeSigningMaterialDeleted": true,
+    "privateFilesRemaining": 0
+  }
+}

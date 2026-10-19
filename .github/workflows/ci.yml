@@ -1,0 +1,235 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Web typecheck
+        run: npm run typecheck
+      - name: Mobile typecheck
+        run: npm run typecheck:mobile
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.23'
+      - run: npm ci
+      - run: npm run test:coverage
+      - name: Coverage report
+        if: always()
+        run: node scripts/ci/report-coverage.mjs
+      - name: XRPL benches
+        run: npm run test:bench
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: coverage
+          path: coverage
+          retention-days: 7
+          if-no-files-found: ignore
+
+  web-build:
+    name: Web build
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: https://example.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_not_a_secret
+      SUPABASE_URL: https://example.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_not_a_secret
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # .output is gitignored, and upload-artifact skips gitignored files.
+      - name: Stage the build artifact
+        run: |
+          rm -rf "${{ runner.temp }}/web-build"
+          mkdir -p "${{ runner.temp }}/web-build"
+          cp -a .output/. "${{ runner.temp }}/web-build/"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: web-build
+          path: ${{ runner.temp }}/web-build
+          retention-days: 5
+          include-hidden-files: true
+
+  mobile:
+    name: Mobile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - name: Expo config and doctor
+        run: node scripts/ci/mobile-check.mjs
+
+  npm-audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run audit:prod
+      - name: Development advisories
+        if: always()
+        run: node scripts/ci/report-dev-audit.mjs
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz \
+            | sudo tar -xz -C /usr/local/bin gitleaks
+      - name: Scan git history
+        run: gitleaks detect --source . --config .gitleaks.toml --redact --exit-code 1 --no-banner
+
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Fetch the base branch
+        run: git fetch origin "${{ github.base_ref }}" --depth=1
+      - name: Fail on new production advisories
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: node scripts/ci/dependency-review.mjs
+
+  client-secrets:
+    name: Client bundle secrets
+    needs: web-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: web-build
+          path: .output
+      - name: Confirm the client bundle
+        run: test -d .output/public/assets
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: node scripts/ci/check-client-secrets.mjs
+
+  bundle-size:
+    name: Bundle size
+    needs: web-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: web-build
+          path: .output
+      - name: Confirm the client bundle
+        run: test -d .output/public/assets
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: node scripts/ci/check-bundle-size.mjs
+
+  database:
+    name: Database
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.120.0
+      - name: Migrate, check RLS, lint, and test
+        run: node scripts/ci/check-db.mjs --require
+
+  lighthouse:
+    name: Lighthouse
+    needs: web-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: web-build
+          path: .output
+      - name: Confirm the server bundle
+        run: test -f .output/server/index.mjs
+      - uses: treosh/lighthouse-ci-action@v12
+        with:
+          configPath: lighthouserc.json
+          uploadArtifacts: true

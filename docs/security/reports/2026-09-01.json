@@ -1,0 +1,224 @@
+{
+  "date": "2026-09-01",
+  "generatedAt": "2026-09-01T18:50:23.838Z",
+  "status": "changed",
+  "headline": "41 more files are now watched every day.",
+  "summary": "41 more files are now watched every day, covering the wallet interface, profile sync, wallet name memory, the wallet screens, checks on outside input and your profile data. Nothing already under watch changed today.",
+  "filesWatched": 86,
+  "changes": [
+    {
+      "path": "src/ledgerly/ui/App.tsx",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/cloud/sync.ts",
+      "kind": "now watched",
+      "area": "profile sync"
+    },
+    {
+      "path": "src/ledgerly/ui/components/ActivityRow.tsx",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/components/icons.tsx",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/components/LegalPage.tsx",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/components/primitives.tsx",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/components/QrCode.tsx",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/components/QrScanner.tsx",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/components/SiteFooter.tsx",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/components/SiteHeader.tsx",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/components/WalletCard.tsx",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/context.tsx",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/docs.ts",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/faucet-sources.ts",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/format.ts",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/index.ts",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/metrics.ts",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/name-memory.ts",
+      "kind": "now watched",
+      "area": "wallet name memory"
+    },
+    {
+      "path": "src/ledgerly/ui/names.ts",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/store.ts",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/transport.ts",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/useSignedIn.ts",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/ledgerly/ui/views/AccountDialogs.tsx",
+      "kind": "now watched",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/views/Activate.tsx",
+      "kind": "now watched",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/views/Activity.tsx",
+      "kind": "now watched",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/views/AddWallet.tsx",
+      "kind": "now watched",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/views/Approval.tsx",
+      "kind": "now watched",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/views/Contacts.tsx",
+      "kind": "now watched",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/views/Dashboard.tsx",
+      "kind": "now watched",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/views/Onboarding.tsx",
+      "kind": "now watched",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/views/ProfileBalances.tsx",
+      "kind": "now watched",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/views/Receive.tsx",
+      "kind": "now watched",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/views/Send.tsx",
+      "kind": "now watched",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/views/Settings.tsx",
+      "kind": "now watched",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/views/SyncPanel.tsx",
+      "kind": "now watched",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/views/TokenDirectory.tsx",
+      "kind": "now watched",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/views/Tokens.tsx",
+      "kind": "now watched",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/views/Unlock.tsx",
+      "kind": "now watched",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/watch.ts",
+      "kind": "now watched",
+      "area": "the wallet interface"
+    },
+    {
+      "path": "src/lib/ingest-guards.ts",
+      "kind": "now watched",
+      "area": "checks on outside input"
+    },
+    {
+      "path": "src/lib/profile.functions.ts",
+      "kind": "now watched",
+      "area": "your profile data"
+    }
+  ],
+  "areas": [
+    "the wallet interface",
+    "profile sync",
+    "wallet name memory",
+    "the wallet screens",
+    "checks on outside input",
+    "your profile data"
+  ],
+  "fullAudit": "2026-08-31-full-security-audit.md"
+}

@@ -1,0 +1,46 @@
+{
+  "cli": {
+    "version": ">= 18.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "environment": "development",
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_LEDGERLY_BUILD_PROFILE": "development"
+      },
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "environment": "development",
+      "distribution": "internal",
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_LEDGERLY_BUILD_PROFILE": "preview"
+      },
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": false
+      }
+    },
+    "simulator": {
+      "environment": "development",
+      "distribution": "internal",
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_LEDGERLY_BUILD_PROFILE": "simulator"
+      },
+      "ios": {
+        "simulator": true
+      }
+    }
+  }
+}

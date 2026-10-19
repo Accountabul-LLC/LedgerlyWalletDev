@@ -1,0 +1,27 @@
+project_id = "hwvyrlrmdktgfbqdmufz"
+
+# Migrations revoke privileges in the pg_net schema. Local Postgres only creates
+# that schema when database webhooks are enabled, which matches hosted Supabase.
+[experimental.webhooks]
+enabled = true
+
+[auth]
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = [
+  "http://127.0.0.1:3000/auth/confirm",
+  "http://localhost:3000/auth/confirm",
+  "http://127.0.0.1:3000/auth/callback",
+  "http://localhost:3000/auth/callback",
+  "http://127.0.0.1:3000/reset-password",
+  "http://localhost:3000/reset-password",
+]
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+double_confirm_changes = true
+
+[auth.email.template.confirmation]
+subject = "Confirm your Ledgerly email"
+content_path = "./supabase/templates/confirmation.html"
