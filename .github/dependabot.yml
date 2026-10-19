@@ -5,6 +5,14 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    # @tanstack/router-plugin 1.168.46+ peers @tanstack/react-router ^1.170.44,
+    # which conflicts with the pinned 1.170.41. Version updates only; security updates stay open.
+    ignore:
+      - dependency-name: '@tanstack/router-plugin'
+        update-types:
+          - 'version-update:semver-major'
+          - 'version-update:semver-minor'
+          - 'version-update:semver-patch'
   - package-ecosystem: github-actions
     directory: /
     schedule:
