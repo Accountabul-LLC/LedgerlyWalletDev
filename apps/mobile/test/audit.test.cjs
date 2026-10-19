@@ -411,9 +411,40 @@ test('development Supabase config points at ledgerly-test', () => {
   assert.equal(backend, 'hwvyrlrmdktgfbqdmufz');
 });
 
-test('production authentication fallback stays on the live website project', () => {
+test('Supabase clients stay env-only and fail closed', () => {
   const fs = require('node:fs');
-  const source = fs.readFileSync(path.join(repo, 'mobile/src/supabase.ts'), 'utf8');
-  assert.ok(source.includes('https://srvzinigfedppxwypmtt.supabase.co'));
-  assert.equal(source.includes('vsaouxymljdcbbsissom'), false);
+  const read = (file) => fs.readFileSync(path.join(repo, file), 'utf8');
+  const supabase = read('mobile/src/supabase.ts');
+  const auth = read('apps/mobile/src/auth.ts');
+  for (const source of [supabase, auth]) {
+    assert.equal(/https:\/\/[a-z0-9-]+\.supabase\.co/i.test(source), false);
+    assert.equal(/sb_publishable_[A-Za-z0-9_-]/.test(source), false);
+    assert.equal(/eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]+\./.test(source), false);
+    assert.match(source, /process\.env\.EXPO_PUBLIC_SUPABASE_URL\?\.trim\(\)/);
+    assert.match(source, /process\.env\.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY\?\.trim\(\)/);
+    assert.match(source, /startsWith\('sb_publishable_'\)/);
+  }
+  assert.match(supabase, /export const PUBLIC_SUPABASE_URL: string = envSupabaseUrl/);
+  assert.match(supabase, /export const PUBLIC_SUPABASE_PUBLISHABLE_KEY: string = envSupabaseKey/);
+  assert.match(supabase, /createClient\(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY/);
+  assert.match(
+    supabase,
+    /if \(!envSupabaseUrl \|\| !envSupabaseKey\)\s*throw new Error\('This build is missing its Ledgerly profile backend configuration\.'\)/,
+  );
+  assert.match(
+    supabase,
+    /if \(IS_TEST_BACKEND_BUILD && PUBLIC_SUPABASE_URL\.includes\(PRODUCTION_SUPABASE_REF\)\)\s*throw new Error\('This test build must not use the production Ledgerly profile backend\.'\)/,
+  );
+  const productionRef = supabase.match(/const PRODUCTION_SUPABASE_REF = '([a-z0-9]+)'/)?.[1];
+  assert.equal(productionRef, 'srvzinigfedppxwypmtt');
+  assert.equal(supabase.includes('vsaouxymljdcbbsissom'), false);
+  assert.match(auth, /createClient\(supabaseUrl, supabasePublishableKey/);
+  assert.match(
+    auth,
+    /if \(!supabaseUrl \|\| !supabasePublishableKey\) \{\s*return 'Ledgerly account sign-in is not configured in this build\.'/,
+  );
+  assert.match(
+    auth,
+    /throw new Error\(configurationError \?\? 'Ledgerly account sign-in is unavailable\.'\)/,
+  );
 });
