@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-30",
+  "date": "2026-10-31",
   "files": {
     "src/ledgerly/core/crypto/aead.ts": "f999edb1634925fc5452e67265f98c5bb842d310092e8e1494de0e00b6f9ee58",
     "src/ledgerly/core/crypto/kdf.ts": "385370a33eb69635f344a65e29aa62a1762e5cb129e16b372998facab6cb9d3d",
