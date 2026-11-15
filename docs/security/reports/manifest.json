@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-14",
+  "date": "2026-11-15",
   "files": {
     "src/ledgerly/core/crypto/bytes.ts": "960290914a4c7f35e6bee0694f815a38f0f6cfa2f1c0ff4028a9dc13709765fe",
     "src/ledgerly/core/crypto/kdf.ts": "385370a33eb69635f344a65e29aa62a1762e5cb129e16b372998facab6cb9d3d",
