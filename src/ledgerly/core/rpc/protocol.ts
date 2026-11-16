@@ -162,12 +162,16 @@ export type ApprovalRequest =
       readonly createdAt: number;
     };
 
+/** CAIP-2 style network ids Accountabul passes into the provider. */
+export type ProviderNetworkId = 'xrpl:testnet' | 'xrpl:devnet';
+
 /** Proof returned by {@link ProviderApi.signMessage}. */
 export interface SignedMessage {
   readonly address: string;
   readonly publicKey: string;
   readonly signature: string;
-  /** The exact string that was signed. */
+  readonly algorithm: SecretAlgorithm;
+  /** The exact string that was signed (for debugging; verifiers rebuild it). */
   readonly message: string;
 }
 
@@ -307,16 +311,26 @@ export interface ProviderApi {
   ping(): Promise<{ version: string }>;
   /** Detection helper: vault setup, unlock, and whether this origin is granted. */
   getStatus(): Promise<ProviderStatus>;
+  /** True when the vault is unlocked in this session. */
+  isUnlocked(): Promise<boolean>;
   getNetwork(): Promise<{ networkId: string; label: string; chainId: number; isTest: boolean }>;
-  /** Resolves to already-granted accounts, or opens an approval window. */
-  requestAccounts(): Promise<{ accounts: readonly string[] }>;
+  /**
+   * Resolves to already-granted classic addresses, or opens an approval window.
+   * Returns a bare address array (Accountabul / EIP-1193 style).
+   */
+  requestAccounts(input?: { network?: ProviderNetworkId }): Promise<readonly string[]>;
   /** Returns granted accounts without prompting; empty when not connected or locked. */
-  getAccounts(): Promise<{ accounts: readonly string[] }>;
+  getAccounts(): Promise<readonly string[]>;
   /**
    * Signs a UTF-8 ownership/challenge message after explicit user approval.
-   * Uses ripple-keypairs message signing, not an XRPL payment transaction.
+   * secp256k1: ECDSA(SHA-256(message)), IEEE-P1363. ed25519: raw message bytes.
+   * Not an XRPL payment transaction.
    */
-  signMessage(input: { address: string; message: string }): Promise<SignedMessage>;
+  signMessage(input: {
+    address: string;
+    message: string;
+    network?: ProviderNetworkId;
+  }): Promise<SignedMessage>;
   signTransaction(input: { address: string; transaction: Transaction }): Promise<{
     txBlob: string;
     hash: string;
@@ -394,6 +408,7 @@ export function isWalletMethod(value: unknown): value is WalletMethod {
 export const PROVIDER_METHODS: readonly ProviderMethod[] = [
   'ping',
   'getStatus',
+  'isUnlocked',
   'getNetwork',
   'requestAccounts',
   'getAccounts',

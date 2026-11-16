@@ -25,6 +25,7 @@ export type {
   Portfolio,
   Preferences,
   PreparedTransaction,
+  ProviderNetworkId,
   ProviderStatus,
   RpcEvent,
   RpcRequest,

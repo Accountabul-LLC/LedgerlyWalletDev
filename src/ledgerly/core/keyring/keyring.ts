@@ -1,8 +1,10 @@
 import { Wallet } from 'xrpl';
 import type { Transaction } from 'xrpl';
-import { sign as signHexMessage } from 'ripple-keypairs';
-import { bytesToHex, utf8ToBytes, wipe } from '../crypto/bytes';
-import type { StoredAccount, VaultPayload } from '../vault/schema';
+import { ed25519 } from '@noble/curves/ed25519.js';
+import { secp256k1 } from '@noble/curves/secp256k1.js';
+import { sha256 } from '@noble/hashes/sha2.js';
+import { bytesToHex, hexToBytes, utf8ToBytes, wipe } from '../crypto/bytes';
+import type { KeyAlgorithm, StoredAccount, VaultPayload } from '../vault/schema';
 import {
   deriveFromMasterSeed,
   deriveFromMnemonic,
@@ -127,24 +129,33 @@ export class Keyring {
   }
 
   /**
-   * Signs an arbitrary UTF-8 message the same way Joey / ripple-keypairs proofs
-   * do: hex-encode the bytes, then sign. Callers verify with
-   * `ripple-keypairs.verify` and `deriveAddress(publicKey)`.
+   * Signs an arbitrary UTF-8 ownership/challenge message for dApps.
    *
-   * This is not an XRPL transaction signature. Ownership challenges and SIWX-
-   * style proofs use this path; payments still go through {@link sign}.
+   * Accountabul verifies:
+   * - secp256k1: ECDSA over SHA-256(message), IEEE-P1363 (r‖s) 64-byte signature
+   * - ed25519: EdDSA over the raw message bytes
+   *
+   * This is not an XRPL transaction signature and not the Joey/ripple-keypairs
+   * hex-message path. Payments still go through {@link sign}.
    */
   signMessage(
     accountId: string,
     message: string,
-  ): { address: string; publicKey: string; signature: string; message: string } {
+  ): {
+    address: string;
+    publicKey: string;
+    signature: string;
+    algorithm: KeyAlgorithm;
+    message: string;
+  } {
     const keypair = this.require(accountId);
-    const messageHex = bytesToHex(utf8ToBytes(message)).toUpperCase();
-    const signature = signHexMessage(messageHex, keypair.privateKey).toUpperCase();
+    const messageBytes = utf8ToBytes(message);
+    const signature = signOwnershipMessage(keypair, messageBytes);
     return {
       address: keypair.address,
       publicKey: keypair.publicKey.toUpperCase(),
-      signature,
+      signature: bytesToHex(signature).toUpperCase(),
+      algorithm: keypair.algorithm,
       message,
     };
   }
@@ -163,5 +174,30 @@ export class Keyring {
       throw new Error('The wallet is locked or that account is not available.');
     }
     return keypair;
+  }
+}
+
+/**
+ * XRPL stores secp256k1 secrets as `00` + 32 bytes and ed25519 as `ED` + 32 bytes.
+ */
+function secretScalar(privateKey: string): Uint8Array {
+  const hex = privateKey.replace(/^0x/i, '').toUpperCase();
+  if (hex.startsWith('00') && hex.length === 66) return hexToBytes(hex.slice(2));
+  if (hex.startsWith('ED') && hex.length === 66) return hexToBytes(hex.slice(2));
+  if (hex.length === 64) return hexToBytes(hex);
+  throw new Error('Unsupported private key encoding.');
+}
+
+function signOwnershipMessage(keypair: Keypair, message: Uint8Array): Uint8Array {
+  const secret = secretScalar(keypair.privateKey);
+  try {
+    if (keypair.algorithm === 'ed25519') {
+      return ed25519.sign(message, secret);
+    }
+    // Accountabul: ECDSA(SHA-256(message)) compact 64-byte signature.
+    const digest = sha256(message);
+    return secp256k1.sign(digest, secret, { prehash: false });
+  } finally {
+    wipe(secret);
   }
 }

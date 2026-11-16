@@ -23,6 +23,7 @@ import type {
   Portfolio,
   Preferences,
   PreparedTransaction,
+  ProviderNetworkId,
   WalletState,
 } from '../rpc/protocol';
 import { STORAGE_KEYS, type KeyValueStore } from '../storage/ports';
@@ -98,6 +99,7 @@ interface DeferredConnect {
   readonly origin: string;
   readonly hostname: string;
   readonly isSecure: boolean;
+  readonly network?: ProviderNetworkId;
   readonly createdAt: number;
   readonly resolve: (accounts: readonly string[]) => void;
   readonly reject: (error: Error) => void;
@@ -106,6 +108,11 @@ interface DeferredConnect {
 
 const DEFERRED_CONNECT_TIMEOUT_MS = 5 * 60 * 1000;
 const MAX_SIGN_MESSAGE_BYTES = 4096;
+
+const PROVIDER_NETWORK_TO_LOCAL: Record<ProviderNetworkId, string> = {
+  'xrpl:testnet': 'testnet',
+  'xrpl:devnet': 'devnet',
+};
 
 const DEFAULT_PREFERENCES: Preferences = {
   autoLockMinutes: 15,
@@ -1228,6 +1235,8 @@ export class WalletEngine {
         };
       },
 
+      isUnlocked: async () => this.isUnlocked,
+
       getNetwork: async () => {
         const network = this.activeNetwork();
         return {
@@ -1238,15 +1247,16 @@ export class WalletEngine {
         };
       },
 
-      getAccounts: async () => ({
-        accounts: (await grantedAccounts()).map((account) => account.address),
-      }),
+      getAccounts: async () =>
+        (await grantedAccounts()).map((account) => account.address),
 
-      requestAccounts: async () => {
+      requestAccounts: async (input?: { network?: ProviderNetworkId }) => {
+        if (input?.network) await this.ensureProviderNetwork(input.network);
+
         const existing = await grantedAccounts();
         if (existing.length > 0) {
           await this.permissions.touch(origin);
-          return { accounts: existing.map((account) => account.address) };
+          return existing.map((account) => account.address);
         }
 
         const ready =
@@ -1255,16 +1265,27 @@ export class WalletEngine {
           this.preferences.backupConfirmed;
 
         if (!ready) {
-          const accounts = await this.deferConnectUntilReady({ origin, hostname, isSecure });
-          return { accounts };
+          return this.deferConnectUntilReady({
+            origin,
+            hostname,
+            isSecure,
+            network: input?.network,
+          });
         }
 
-        const accounts = await this.promptConnect({ origin, hostname, isSecure });
-        return { accounts };
+        return this.promptConnect({
+          origin,
+          hostname,
+          isSecure,
+          network: input?.network,
+        });
       },
 
-      signMessage: async (input: { address: string; message: string }) =>
-        this.dappSignMessage(origin, hostname, input),
+      signMessage: async (input: {
+        address: string;
+        message: string;
+        network?: ProviderNetworkId;
+      }) => this.dappSignMessage(origin, hostname, input),
 
       signTransaction: async (input: { address: string; transaction: Transaction }) =>
         this.dappSign(origin, hostname, input, false),
@@ -1294,6 +1315,7 @@ export class WalletEngine {
     origin: string;
     hostname: string;
     isSecure: boolean;
+    network?: ProviderNetworkId;
   }): Promise<readonly string[]> {
     const existing = this.deferredConnects.get(input.origin);
     if (existing) {
@@ -1319,6 +1341,7 @@ export class WalletEngine {
         origin: input.origin,
         hostname: input.hostname,
         isSecure: input.isSecure,
+        ...(input.network ? { network: input.network } : {}),
         createdAt: Date.now(),
         resolve,
         reject,
@@ -1348,6 +1371,7 @@ export class WalletEngine {
         origin: deferred.origin,
         hostname: deferred.hostname,
         isSecure: deferred.isSecure,
+        network: deferred.network,
       }).then(
         (accounts) => deferred.resolve(accounts),
         (error: unknown) =>
@@ -1360,6 +1384,7 @@ export class WalletEngine {
     origin: string;
     hostname: string;
     isSecure: boolean;
+    network?: ProviderNetworkId;
   }): Promise<readonly string[]> {
     if (!this.isUnlocked) {
       throw new ProviderError('wallet_locked', 'Unlock Ledgerly to connect.');
@@ -1370,6 +1395,7 @@ export class WalletEngine {
         'Finish backing up your recovery phrase in Ledgerly before connecting.',
       );
     }
+    if (input.network) await this.ensureProviderNetwork(input.network);
 
     const known = await this.permissions.isKnown(input.origin);
     const assessment = assessSite(input.hostname, input.isSecure, known);
@@ -1403,10 +1429,30 @@ export class WalletEngine {
     return accounts;
   }
 
+  private async ensureProviderNetwork(network: ProviderNetworkId): Promise<void> {
+    const localId = PROVIDER_NETWORK_TO_LOCAL[network];
+    if (!localId) {
+      throw new ProviderError(
+        'invalid_request',
+        'Only xrpl:testnet and xrpl:devnet are supported for Ledgerly Connect.',
+      );
+    }
+    if (this.activeNetwork().id === localId) return;
+    await this.setNetwork({ networkId: localId });
+    this.emitProviderEvent({
+      event: 'networkChanged',
+      payload: {
+        networkId: localId,
+        chainId: this.activeNetwork().networkId,
+        caip2: network,
+      },
+    });
+  }
+
   private async dappSignMessage(
     origin: string,
     hostname: string,
-    input: { address: string; message: string },
+    input: { address: string; message: string; network?: ProviderNetworkId },
   ) {
     if (!this.isUnlocked) {
       throw new ProviderError('wallet_locked', 'Unlock Ledgerly to sign.');
@@ -1417,6 +1463,7 @@ export class WalletEngine {
     if (utf8ToBytes(input.message).byteLength > MAX_SIGN_MESSAGE_BYTES) {
       throw new ProviderError('invalid_request', 'That message is too long to sign.');
     }
+    if (input.network) await this.ensureProviderNetwork(input.network);
 
     const payload = this.requirePayload();
     const allowed = await this.permissions.allowedAccounts(

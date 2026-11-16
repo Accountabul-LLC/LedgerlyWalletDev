@@ -1,11 +1,13 @@
+import { createPublicKey, verify as cryptoVerify } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-import { deriveAddress, verify } from 'ripple-keypairs';
-import { bytesToHex, utf8ToBytes } from '@/ledgerly/core/crypto/bytes';
+import { secp256k1 } from '@noble/curves/secp256k1.js';
+import { hexToBytes, utf8ToBytes } from '@/ledgerly/core/crypto/bytes';
 import { WalletEngine } from '@/ledgerly/core/engine/engine';
 import { ProviderError } from '@/ledgerly/core/engine/provider-errors';
 import type { ApprovalRequest } from '@/ledgerly/core/rpc/protocol';
 import { MemoryStore } from '@/ledgerly/core/storage/ports';
 import { MemorySessionStore } from '@/ledgerly/core/storage/session';
+import { deriveAddress } from 'ripple-keypairs';
 
 const PASSWORD = 'correct-horse-battery-staple-99';
 const SITE = 'https://app.accountabul.test/dashboard';
@@ -55,11 +57,41 @@ async function waitUntil(
 
 async function connectSite(engine: WalletEngine, url = SITE): Promise<readonly string[]> {
   const provider = engine.provider(url);
-  const connectPromise = provider.requestAccounts();
+  const connectPromise = provider.requestAccounts({ network: 'xrpl:testnet' });
   const request = await waitForApproval(engine, 'connect');
   const accountId = (await engine.getState()).activeAccountId!;
   await engine.resolveApproval({ id: request.id, approved: true, accountIds: [accountId] });
-  return (await connectPromise).accounts;
+  return connectPromise;
+}
+
+/** Mirrors Accountabul verify-signature.server.ts for secp256k1 proofs. */
+function verifyAccountabulSecp256k1(proof: {
+  address: string;
+  message: string;
+  signature: string;
+  publicKey: string;
+  algorithm: string;
+}): boolean {
+  expect(proof.algorithm).toBe('secp256k1');
+  const publicKeyHex = proof.publicKey.toLowerCase();
+  expect(deriveAddress(publicKeyHex)).toBe(proof.address);
+  const compressed = Buffer.from(publicKeyHex, 'hex');
+  const uncompressed = Buffer.from(secp256k1.Point.fromBytes(compressed).toBytes(false));
+  const keyObject = createPublicKey({
+    format: 'jwk',
+    key: {
+      kty: 'EC',
+      crv: 'secp256k1',
+      x: uncompressed.subarray(1, 33).toString('base64url'),
+      y: uncompressed.subarray(33, 65).toString('base64url'),
+    },
+  });
+  return cryptoVerify(
+    'SHA256',
+    Buffer.from(proof.message, 'utf8'),
+    { key: keyObject, dsaEncoding: 'ieee-p1363' },
+    Buffer.from(proof.signature, 'hex'),
+  );
 }
 
 describe('Ledgerly Connect provider', () => {
@@ -67,20 +99,23 @@ describe('Ledgerly Connect provider', () => {
     const { engine } = await unlockedEngine();
     const provider = engine.provider(SITE);
     const accounts = await connectSite(engine);
+    expect(Array.isArray(accounts)).toBe(true);
 
     await engine.lock();
+    expect(await provider.isUnlocked()).toBe(false);
     const lockedStatus = await provider.getStatus();
     expect(lockedStatus).toMatchObject({
       setup: true,
       unlocked: false,
       authorized: true,
     });
-    expect((await provider.getAccounts()).accounts).toEqual([]);
+    expect(await provider.getAccounts()).toEqual([]);
 
     await engine.unlock({ password: PASSWORD });
-    expect((await provider.getAccounts()).accounts).toEqual(accounts);
+    expect(await provider.isUnlocked()).toBe(true);
+    expect(await provider.getAccounts()).toEqual(accounts);
     expect(await engine.listApprovals()).toHaveLength(0);
-    expect((await provider.requestAccounts()).accounts).toEqual(accounts);
+    expect(await provider.requestAccounts({ network: 'xrpl:testnet' })).toEqual(accounts);
   });
 
   it('defers connect while locked and resumes after unlock', async () => {
@@ -92,7 +127,7 @@ describe('Ledgerly Connect provider', () => {
     await engine.lock();
     opened.mockClear();
     const provider = engine.provider(SITE);
-    const pending = provider.requestAccounts();
+    const pending = provider.requestAccounts({ network: 'xrpl:testnet' });
     await waitUntil(() => opened.mock.calls.length > 0, 'approval window open');
     await waitUntil(
       async () => (await engine.getState()).pendingSiteConnect?.hostname === 'app.accountabul.test',
@@ -107,7 +142,7 @@ describe('Ledgerly Connect provider', () => {
       accountIds: [accountId],
     });
     const result = await pending;
-    expect(result.accounts).toEqual([accountsBefore[0]!.address]);
+    expect(result).toEqual([accountsBefore[0]!.address]);
     expect((await engine.getState()).pendingSiteConnect).toBeNull();
   });
 
@@ -122,7 +157,7 @@ describe('Ledgerly Connect provider', () => {
     });
     await engine.start();
     const provider = engine.provider(SITE);
-    const pending = provider.requestAccounts();
+    const pending = provider.requestAccounts({ network: 'xrpl:testnet' });
     await waitUntil(() => opened.mock.calls.length > 0, 'approval window open');
     expect((await engine.getState()).status).toBe('uninitialized');
 
@@ -134,29 +169,34 @@ describe('Ledgerly Connect provider', () => {
     const accountId = (await engine.getState()).activeAccountId!;
     await engine.resolveApproval({ id: request.id, approved: true, accountIds: [accountId] });
     const result = await pending;
-    expect(result.accounts).toHaveLength(1);
+    expect(result).toHaveLength(1);
   });
 
-  it('signs ownership messages with ripple-keypairs verifiable proofs', async () => {
+  it('signs ownership messages verifiable by Accountabul secp256k1 rules', async () => {
     const { engine } = await unlockedEngine();
     const provider = engine.provider(SITE);
     const accounts = await connectSite(engine);
     const address = accounts[0]!;
 
     const message = [
-      'app.accountabul.test wants you to sign in with your XRPL account:',
-      address,
-      '',
-      'Link this wallet to Accountabul',
-      '',
-      'URI: https://app.accountabul.test',
-      'Version: 1',
-      'Chain ID: xrpl:1',
-      'Nonce: test-nonce-abc',
-      `Issued At: ${new Date().toISOString()}`,
+      'Accountabul Wallet Control Verification',
+      'version:1',
+      'audience:https://www.accountabul.com',
+      'origin:https://app.accountabul.test',
+      'network:xrpl:testnet',
+      `address:${address}`,
+      'user:00000000-0000-4000-8000-000000000001',
+      'nonce:test-nonce-abc',
+      `issued:${new Date().toISOString()}`,
+      `expires:${new Date(Date.now() + 300_000).toISOString()}`,
+      'purpose:connect',
     ].join('\n');
 
-    const signPromise = provider.signMessage({ address, message });
+    const signPromise = provider.signMessage({
+      address,
+      message,
+      network: 'xrpl:testnet',
+    });
     const signRequest = await waitForApproval(engine, 'signMessage');
     if (signRequest.kind === 'signMessage') {
       expect(signRequest.message).toBe(message);
@@ -165,9 +205,11 @@ describe('Ledgerly Connect provider', () => {
     const proof = await signPromise;
 
     expect(proof.address).toBe(address);
-    expect(deriveAddress(proof.publicKey)).toBe(address);
-    const messageHex = bytesToHex(utf8ToBytes(proof.message)).toUpperCase();
-    expect(verify(messageHex, proof.signature, proof.publicKey)).toBe(true);
+    expect(proof.algorithm).toBe('secp256k1');
+    expect(hexToBytes(proof.signature)).toHaveLength(64);
+    expect(verifyAccountabulSecp256k1(proof)).toBe(true);
+    // Message bytes themselves are what Accountabul hashes — not hex-encoded UTF-8.
+    expect(utf8ToBytes(proof.message)).toEqual(utf8ToBytes(message));
   });
 
   it('rejects foreign origins, unauthorized signing, and concurrent deferred connects', async () => {
@@ -177,16 +219,18 @@ describe('Ledgerly Connect provider', () => {
 
     const evil = engine.provider(OTHER);
     await expect(
-      evil.signMessage({ address: accounts[0]!, message: 'steal' }),
+      evil.signMessage({ address: accounts[0]!, message: 'steal', network: 'xrpl:testnet' }),
     ).rejects.toMatchObject({ code: 'unauthorized' } satisfies Partial<ProviderError>);
 
     await engine.lock();
-    const first = good.requestAccounts();
+    const first = good.requestAccounts({ network: 'xrpl:testnet' });
     await waitUntil(
       async () => (await engine.getState()).pendingSiteConnect !== null,
       'deferred connect',
     );
-    await expect(good.requestAccounts()).rejects.toMatchObject({ code: 'pending_request' });
+    await expect(good.requestAccounts({ network: 'xrpl:testnet' })).rejects.toMatchObject({
+      code: 'pending_request',
+    });
     await good.disconnect();
     await expect(first).rejects.toMatchObject({ code: 'user_rejected' });
   });

@@ -90,10 +90,12 @@ const provider = Object.freeze({
   isLedgerly: true,
   ping: () => send('ping'),
   getStatus: () => send('getStatus'),
+  isUnlocked: () => send('isUnlocked'),
   getNetwork: () => send('getNetwork'),
   getAccounts: () => send('getAccounts'),
-  requestAccounts: () => send('requestAccounts'),
-  signMessage: (input: { address: string; message: string }) => send('signMessage', input),
+  requestAccounts: (input?: { network?: string }) => send('requestAccounts', input ?? {}),
+  signMessage: (input: { address: string; message: string; network?: string }) =>
+    send('signMessage', input),
   signTransaction: (input: { address: string; transaction: unknown }) =>
     send('signTransaction', input),
   signAndSubmit: (input: { address: string; transaction: unknown }) => send('signAndSubmit', input),
