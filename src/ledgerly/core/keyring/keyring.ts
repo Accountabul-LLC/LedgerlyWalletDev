@@ -1,6 +1,7 @@
 import { Wallet } from 'xrpl';
 import type { Transaction } from 'xrpl';
-import { wipe } from '../crypto/bytes';
+import { sign as signHexMessage } from 'ripple-keypairs';
+import { bytesToHex, utf8ToBytes, wipe } from '../crypto/bytes';
 import type { StoredAccount, VaultPayload } from '../vault/schema';
 import {
   deriveFromMasterSeed,
@@ -123,6 +124,29 @@ export class Keyring {
     const wallet = new Wallet(keypair.publicKey, keypair.privateKey);
     const { tx_blob: txBlob, hash } = wallet.sign(transaction);
     return { txBlob, hash };
+  }
+
+  /**
+   * Signs an arbitrary UTF-8 message the same way Joey / ripple-keypairs proofs
+   * do: hex-encode the bytes, then sign. Callers verify with
+   * `ripple-keypairs.verify` and `deriveAddress(publicKey)`.
+   *
+   * This is not an XRPL transaction signature. Ownership challenges and SIWX-
+   * style proofs use this path; payments still go through {@link sign}.
+   */
+  signMessage(
+    accountId: string,
+    message: string,
+  ): { address: string; publicKey: string; signature: string; message: string } {
+    const keypair = this.require(accountId);
+    const messageHex = bytesToHex(utf8ToBytes(message)).toUpperCase();
+    const signature = signHexMessage(messageHex, keypair.privateKey).toUpperCase();
+    return {
+      address: keypair.address,
+      publicKey: keypair.publicKey.toUpperCase(),
+      signature,
+      message,
+    };
   }
 
   wipe(): void {

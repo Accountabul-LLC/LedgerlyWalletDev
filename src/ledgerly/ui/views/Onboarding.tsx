@@ -154,6 +154,7 @@ function Welcome({
 }: {
   onChoose: (mode: 'create' | 'importPhrase' | 'importSecret') => void;
 }) {
+  const { state } = useWallet();
   const signedIn = useSignedIn();
   return (
     <div className="stack">
@@ -168,6 +169,14 @@ function Welcome({
             : 'Your XRP Ledger keys are created on your device and stay encrypted there. Ledgerly never holds them, nothing is uploaded, and no server ever sees your recovery phrase.'}
         </p>
       </div>
+
+      {state.pendingSiteConnect ? (
+        <Callout tone="info" title={`${state.pendingSiteConnect.hostname} is waiting`}>
+          Create or restore a wallet here in Ledgerly first. You will then be asked whether to share
+          an address with that site. Never type a recovery phrase into the website that opened this
+          request.
+        </Callout>
+      ) : null}
 
       {signedIn ? (
         <Link to="/balances" className="button button--accent button--block">

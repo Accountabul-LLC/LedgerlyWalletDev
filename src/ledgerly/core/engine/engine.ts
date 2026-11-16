@@ -1,5 +1,5 @@
 import type { Transaction } from 'xrpl';
-import { base64ToBytes, bytesToBase64, wipe } from '../crypto/bytes';
+import { base64ToBytes, bytesToBase64, utf8ToBytes, wipe } from '../crypto/bytes';
 import { randomBytes } from '../crypto/random';
 import { Keyring } from '../keyring/keyring';
 import { createMnemonic, isValidMnemonic, normalizeMnemonic } from '../keyring/mnemonic';
@@ -68,7 +68,15 @@ import {
   buildTrustSet,
   sanitizeDappTransaction,
 } from '../xrpl/transaction';
-import { ApprovalQueue, ApprovalRejected } from './approvals';
+import { ApprovalQueue } from './approvals';
+import { ProviderError } from './provider-errors';
+
+export interface ProviderEvent {
+  /** When set, only tabs for this origin should receive the event. */
+  readonly origin?: string;
+  readonly event: 'accountsChanged' | 'disconnect' | 'networkChanged';
+  readonly payload: unknown;
+}
 
 export interface EngineOptions {
   readonly store: KeyValueStore;
@@ -82,7 +90,22 @@ export interface EngineOptions {
   /** Notifies the host that an approval needs a window opened. */
   readonly onApprovalRequested?: () => void;
   readonly onStateChanged?: () => void;
+  /** Pushes EIP-1193-style provider events to connected pages. */
+  readonly onProviderEvent?: (event: ProviderEvent) => void;
 }
+
+interface DeferredConnect {
+  readonly origin: string;
+  readonly hostname: string;
+  readonly isSecure: boolean;
+  readonly createdAt: number;
+  readonly resolve: (accounts: readonly string[]) => void;
+  readonly reject: (error: Error) => void;
+  readonly timer: ReturnType<typeof setTimeout>;
+}
+
+const DEFERRED_CONNECT_TIMEOUT_MS = 5 * 60 * 1000;
+const MAX_SIGN_MESSAGE_BYTES = 4096;
 
 const DEFAULT_PREFERENCES: Preferences = {
   autoLockMinutes: 15,
@@ -135,6 +158,8 @@ export class WalletEngine {
   private sessionExpiresAt: number | null = null;
   private startup: Promise<void> | null = null;
   private networkMutation: Promise<void> = Promise.resolve();
+  /** Site connect requests waiting for unlock or first-time wallet setup. */
+  private deferredConnects = new Map<string, DeferredConnect>();
 
   constructor(private readonly options: EngineOptions) {
     this.store = options.store;
@@ -227,6 +252,7 @@ export class WalletEngine {
   async getState(): Promise<WalletState> {
     const status = this.vaultRecord === null ? 'uninitialized' : this.isUnlocked ? 'unlocked' : 'locked';
     const lockout = await this.guard.remainingLockout();
+    const deferred = [...this.deferredConnects.values()][0] ?? null;
     return {
       status,
       accounts: this.isUnlocked ? this.accountViews() : [],
@@ -238,6 +264,9 @@ export class WalletEngine {
       lockoutUntil: lockout > 0 ? Date.now() + lockout : null,
       sessionExpiresAt: this.isUnlocked ? this.sessionExpiresAt : null,
       pendingApprovals: this.approvals.size,
+      pendingSiteConnect: deferred
+        ? { origin: deferred.origin, hostname: deferred.hostname }
+        : null,
     };
   }
 
@@ -263,12 +292,14 @@ export class WalletEngine {
     // A phrase the wallet just generated has not been written down yet. One the
     // user supplied is already in their hands, so it needs no backup step.
     await this.updatePreferences({ activeAccountId: first.id, backupConfirmed: restoring });
+    if (restoring) this.resumeDeferredConnects();
     return { mnemonic };
   }
 
   async confirmBackup(): Promise<void> {
     this.requirePayload();
     await this.updatePreferences({ backupConfirmed: true });
+    this.resumeDeferredConnects();
   }
 
   async importFromSeed(input: { password: string; seed: string; label?: string }): Promise<void> {
@@ -297,6 +328,7 @@ export class WalletEngine {
     await this.openSession(payload, key);
     // The user supplied this secret, so there is nothing new to back up.
     await this.updatePreferences({ activeAccountId: account.id, backupConfirmed: true });
+    this.resumeDeferredConnects();
   }
 
   async unlock(input: { password: string }): Promise<void> {
@@ -322,6 +354,8 @@ export class WalletEngine {
     await this.persistSession();
     this.scheduleAutoLock();
     this.options.onStateChanged?.();
+    // Do not await: connect approval must not block unlock itself.
+    this.resumeDeferredConnects();
   }
 
   /** Drops every secret held in memory and declines anything waiting on the user. */
@@ -335,6 +369,8 @@ export class WalletEngine {
     this.portfolioCache.clear();
     this.prepared.clear();
     this.approvals.rejectAll('The wallet was locked.');
+    // Deferred site connects stay alive so unlocking can resume them; only an
+    // explicit disconnect/timeout cancels the site's waiting promise.
     await this.session.clear();
     await this.connection.close();
     this.options.onStateChanged?.();
@@ -716,6 +752,7 @@ export class WalletEngine {
     this.requireAccount(input.accountId);
     this.touchActivity();
     await this.updatePreferences({ activeAccountId: input.accountId });
+    await this.emitAccountsChangedForGrants();
   }
 
   private async buildDerivedAccount(
@@ -1132,6 +1169,21 @@ export class WalletEngine {
       ...(input.accountIds ? { accountIds: input.accountIds } : {}),
     });
     this.touchActivity();
+
+    if (request.kind === 'connect' && input.approved) {
+      const payload = this.requirePayload();
+      const allowed = await this.permissions.allowedAccounts(
+        request.origin,
+        payload.accounts.map((account) => account.id),
+      );
+      this.emitProviderEvent({
+        origin: request.origin,
+        event: 'accountsChanged',
+        payload: payload.accounts
+          .filter((account) => allowed.includes(account.id))
+          .map((account) => account.address),
+      });
+    }
   }
 
   // -------------------------------------------------------------- provider
@@ -1146,7 +1198,7 @@ export class WalletEngine {
   provider(senderUrl: string | undefined) {
     const info = parseOrigin(senderUrl);
     if (!info) {
-      throw new Error('Requests must come from an http(s) page.');
+      throw new ProviderError('invalid_request', 'Requests must come from an http(s) page.');
     }
     const { origin, hostname, isSecure } = info;
 
@@ -1162,6 +1214,19 @@ export class WalletEngine {
 
     return {
       ping: async () => ({ version: this.version }),
+
+      getStatus: async () => {
+        const network = this.activeNetwork();
+        const permission = await this.permissions.get(origin);
+        return {
+          setup: this.vaultRecord !== null,
+          unlocked: this.isUnlocked,
+          authorized: Boolean(permission && permission.accountIds.length > 0),
+          networkId: network.id,
+          chainId: network.networkId,
+          isTest: network.isTest,
+        };
+      },
 
       getNetwork: async () => {
         const network = this.activeNetwork();
@@ -1183,26 +1248,23 @@ export class WalletEngine {
           await this.permissions.touch(origin);
           return { accounts: existing.map((account) => account.address) };
         }
-        if (!this.isUnlocked) {
-          throw new Error('Unlock Ledgerly to connect.');
+
+        const ready =
+          this.isUnlocked &&
+          this.vaultRecord !== null &&
+          this.preferences.backupConfirmed;
+
+        if (!ready) {
+          const accounts = await this.deferConnectUntilReady({ origin, hostname, isSecure });
+          return { accounts };
         }
 
-        const known = await this.permissions.isKnown(origin);
-        const assessment = assessSite(hostname, isSecure, known);
-        const request: ApprovalRequest = {
-          id: newId(),
-          kind: 'connect',
-          origin,
-          hostname,
-          findings: assessment.findings,
-          createdAt: Date.now(),
-        };
-
-        const outcome = await this.enqueueApproval(request);
-        if (!outcome.approved) throw new ApprovalRejected();
-        const granted = await grantedAccounts();
-        return { accounts: granted.map((account) => account.address) };
+        const accounts = await this.promptConnect({ origin, hostname, isSecure });
+        return { accounts };
       },
+
+      signMessage: async (input: { address: string; message: string }) =>
+        this.dappSignMessage(origin, hostname, input),
 
       signTransaction: async (input: { address: string; transaction: Transaction }) =>
         this.dappSign(origin, hostname, input, false),
@@ -1211,10 +1273,213 @@ export class WalletEngine {
         this.dappSign(origin, hostname, input, true),
 
       disconnect: async () => {
+        this.rejectDeferredConnect(
+          origin,
+          new ProviderError('user_rejected', 'The site disconnected.'),
+        );
         await this.permissions.revoke(origin);
         this.approvals.rejectForOrigin(origin, 'The site disconnected.');
+        this.emitProviderEvent({ origin, event: 'disconnect', payload: { code: 4900 } });
+        this.emitProviderEvent({ origin, event: 'accountsChanged', payload: [] });
       },
     };
+  }
+
+  /**
+   * Holds a connect request while the user unlocks or creates a vault, then
+   * opens the normal account-sharing approval. Never asks for a recovery phrase
+   * on the requesting site — setup stays inside Ledgerly.
+   */
+  private deferConnectUntilReady(input: {
+    origin: string;
+    hostname: string;
+    isSecure: boolean;
+  }): Promise<readonly string[]> {
+    const existing = this.deferredConnects.get(input.origin);
+    if (existing) {
+      return Promise.reject(
+        new ProviderError(
+          'pending_request',
+          'A connection request from this site is already waiting in Ledgerly.',
+        ),
+      );
+    }
+
+    this.options.onApprovalRequested?.();
+    this.options.onStateChanged?.();
+
+    return new Promise<readonly string[]>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.deferredConnects.delete(input.origin);
+        this.options.onStateChanged?.();
+        reject(new ProviderError('user_rejected', 'The connection request timed out.'));
+      }, DEFERRED_CONNECT_TIMEOUT_MS);
+
+      this.deferredConnects.set(input.origin, {
+        origin: input.origin,
+        hostname: input.hostname,
+        isSecure: input.isSecure,
+        createdAt: Date.now(),
+        resolve,
+        reject,
+        timer,
+      });
+      this.options.onStateChanged?.();
+    });
+  }
+
+  private rejectDeferredConnect(origin: string, error: Error): void {
+    const deferred = this.deferredConnects.get(origin);
+    if (!deferred) return;
+    clearTimeout(deferred.timer);
+    this.deferredConnects.delete(origin);
+    deferred.reject(error);
+    this.options.onStateChanged?.();
+  }
+
+  private resumeDeferredConnects(): void {
+    if (!this.isUnlocked || !this.preferences.backupConfirmed) return;
+    const waiting = [...this.deferredConnects.values()];
+    for (const deferred of waiting) {
+      clearTimeout(deferred.timer);
+      this.deferredConnects.delete(deferred.origin);
+      this.options.onStateChanged?.();
+      void this.promptConnect({
+        origin: deferred.origin,
+        hostname: deferred.hostname,
+        isSecure: deferred.isSecure,
+      }).then(
+        (accounts) => deferred.resolve(accounts),
+        (error: unknown) =>
+          deferred.reject(error instanceof Error ? error : new Error(String(error))),
+      );
+    }
+  }
+
+  private async promptConnect(input: {
+    origin: string;
+    hostname: string;
+    isSecure: boolean;
+  }): Promise<readonly string[]> {
+    if (!this.isUnlocked) {
+      throw new ProviderError('wallet_locked', 'Unlock Ledgerly to connect.');
+    }
+    if (!this.preferences.backupConfirmed) {
+      throw new ProviderError(
+        'wallet_setup_required',
+        'Finish backing up your recovery phrase in Ledgerly before connecting.',
+      );
+    }
+
+    const known = await this.permissions.isKnown(input.origin);
+    const assessment = assessSite(input.hostname, input.isSecure, known);
+    const request: ApprovalRequest = {
+      id: newId(),
+      kind: 'connect',
+      origin: input.origin,
+      hostname: input.hostname,
+      findings: assessment.findings,
+      createdAt: Date.now(),
+    };
+
+    const outcome = await this.enqueueApproval(request);
+    if (!outcome.approved) {
+      throw new ProviderError('user_rejected', 'The request was declined.');
+    }
+
+    const payload = this.requirePayload();
+    const allowed = await this.permissions.allowedAccounts(
+      input.origin,
+      payload.accounts.map((account) => account.id),
+    );
+    const accounts = payload.accounts
+      .filter((account) => allowed.includes(account.id))
+      .map((account) => account.address);
+    this.emitProviderEvent({
+      origin: input.origin,
+      event: 'accountsChanged',
+      payload: accounts,
+    });
+    return accounts;
+  }
+
+  private async dappSignMessage(
+    origin: string,
+    hostname: string,
+    input: { address: string; message: string },
+  ) {
+    if (!this.isUnlocked) {
+      throw new ProviderError('wallet_locked', 'Unlock Ledgerly to sign.');
+    }
+    if (typeof input.message !== 'string' || input.message.length === 0) {
+      throw new ProviderError('invalid_request', 'A non-empty message is required.');
+    }
+    if (utf8ToBytes(input.message).byteLength > MAX_SIGN_MESSAGE_BYTES) {
+      throw new ProviderError('invalid_request', 'That message is too long to sign.');
+    }
+
+    const payload = this.requirePayload();
+    const allowed = await this.permissions.allowedAccounts(
+      origin,
+      payload.accounts.map((account) => account.id),
+    );
+    const account = payload.accounts.find(
+      (candidate) => candidate.address === input.address && allowed.includes(candidate.id),
+    );
+    if (!account) {
+      throw new ProviderError(
+        'unauthorized',
+        'This site does not have access to that account.',
+      );
+    }
+    if (this.keyring.isExternal(account.id)) {
+      throw new ProviderError(
+        'invalid_request',
+        'That wallet is held in another app. Approve the message there instead.',
+      );
+    }
+
+    const outcome = await this.enqueueApproval({
+      id: newId(),
+      kind: 'signMessage',
+      origin,
+      hostname,
+      accountId: account.id,
+      address: account.address,
+      message: input.message,
+      createdAt: Date.now(),
+    });
+    if (!outcome.approved) {
+      throw new ProviderError('user_rejected', 'The request was declined.');
+    }
+
+    const signed = this.keyring.signMessage(account.id, input.message);
+    await this.permissions.touch(origin);
+    this.touchActivity();
+    return signed;
+  }
+
+  private emitProviderEvent(event: ProviderEvent): void {
+    this.options.onProviderEvent?.(event);
+  }
+
+  private async emitAccountsChangedForGrants(): Promise<void> {
+    if (!this.isUnlocked) return;
+    const payload = this.requirePayload();
+    const permissions = await this.permissions.list();
+    for (const permission of permissions) {
+      const allowed = permission.accountIds.filter((id) =>
+        payload.accounts.some((account) => account.id === id),
+      );
+      const addresses = payload.accounts
+        .filter((account) => allowed.includes(account.id))
+        .map((account) => account.address);
+      this.emitProviderEvent({
+        origin: permission.origin,
+        event: 'accountsChanged',
+        payload: addresses,
+      });
+    }
   }
 
   private async dappSign(
@@ -1236,7 +1501,7 @@ export class WalletEngine {
     submit: boolean,
   ): Promise<SubmissionResult | { txBlob: string; hash: string }> {
     if (!this.isUnlocked) {
-      throw new Error('Unlock Ledgerly to sign.');
+      throw new ProviderError('wallet_locked', 'Unlock Ledgerly to sign.');
     }
     const payload = this.requirePayload();
     const allowed = await this.permissions.allowedAccounts(
@@ -1247,7 +1512,10 @@ export class WalletEngine {
       (candidate) => candidate.address === input.address && allowed.includes(candidate.id),
     );
     if (!account) {
-      throw new Error('This site does not have access to that account.');
+      throw new ProviderError(
+        'unauthorized',
+        'This site does not have access to that account.',
+      );
     }
 
     const sanitized = sanitizeDappTransaction(input.transaction, account.address);
@@ -1286,7 +1554,9 @@ export class WalletEngine {
       submit,
       createdAt: Date.now(),
     });
-    if (!outcome.approved) throw new ApprovalRejected();
+    if (!outcome.approved) {
+      throw new ProviderError('user_rejected', 'The request was declined.');
+    }
 
     const signed = this.keyring.sign(account.id, transaction);
     await this.permissions.touch(origin);

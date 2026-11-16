@@ -92,6 +92,11 @@ export interface WalletState {
    */
   readonly sessionExpiresAt: number | null;
   readonly pendingApprovals: number;
+  /**
+   * A site asked to connect while the vault was locked or not yet created.
+   * The popup shows unlock/onboarding, then the connect approval.
+   */
+  readonly pendingSiteConnect: { readonly origin: string; readonly hostname: string } | null;
 }
 
 export interface Portfolio {
@@ -144,7 +149,38 @@ export type ApprovalRequest =
       readonly description: TransactionDescription;
       readonly submit: boolean;
       readonly createdAt: number;
+    }
+  | {
+      readonly id: string;
+      readonly kind: 'signMessage';
+      readonly origin: string;
+      readonly hostname: string;
+      readonly accountId: string;
+      readonly address: string;
+      /** Exact UTF-8 string the site asked to have signed; shown to the user. */
+      readonly message: string;
+      readonly createdAt: number;
     };
+
+/** Proof returned by {@link ProviderApi.signMessage}. */
+export interface SignedMessage {
+  readonly address: string;
+  readonly publicKey: string;
+  readonly signature: string;
+  /** The exact string that was signed. */
+  readonly message: string;
+}
+
+/** Compact status for dApp detection without prompting. */
+export interface ProviderStatus {
+  readonly setup: boolean;
+  readonly unlocked: boolean;
+  /** True when this origin already has a non-empty account grant. */
+  readonly authorized: boolean;
+  readonly networkId: string;
+  readonly chainId: number;
+  readonly isTest: boolean;
+}
 
 /**
  * Methods reachable only from the extension's own pages.
@@ -269,11 +305,18 @@ export interface WalletApi {
  */
 export interface ProviderApi {
   ping(): Promise<{ version: string }>;
+  /** Detection helper: vault setup, unlock, and whether this origin is granted. */
+  getStatus(): Promise<ProviderStatus>;
   getNetwork(): Promise<{ networkId: string; label: string; chainId: number; isTest: boolean }>;
   /** Resolves to already-granted accounts, or opens an approval window. */
   requestAccounts(): Promise<{ accounts: readonly string[] }>;
-  /** Returns granted accounts without prompting; empty when not connected. */
+  /** Returns granted accounts without prompting; empty when not connected or locked. */
   getAccounts(): Promise<{ accounts: readonly string[] }>;
+  /**
+   * Signs a UTF-8 ownership/challenge message after explicit user approval.
+   * Uses ripple-keypairs message signing, not an XRPL payment transaction.
+   */
+  signMessage(input: { address: string; message: string }): Promise<SignedMessage>;
   signTransaction(input: { address: string; transaction: Transaction }): Promise<{
     txBlob: string;
     hash: string;
@@ -350,9 +393,11 @@ export function isWalletMethod(value: unknown): value is WalletMethod {
 
 export const PROVIDER_METHODS: readonly ProviderMethod[] = [
   'ping',
+  'getStatus',
   'getNetwork',
   'requestAccounts',
   'getAccounts',
+  'signMessage',
   'signTransaction',
   'signAndSubmit',
   'disconnect',
