@@ -3,6 +3,10 @@
 Status: Phase 1 aligned with Accountabul Agent A (`cursor/ledgerly-connect-accountabul-96a4`).
 Coordination: Accountabul issue #102 / PR #101 mailbox.
 
+## Two separate products
+
+Ledgerly Wallet (`LedgerlyWalletDev` / Ledgerly-Wallet) and Accountabul (`accountabul-final`) stay **separate codebases, deployments, and databases**. They are not merged. Accountabul talks to Ledgerly only through the browser extension’s page provider (`window.ledgerly`). Keys and recovery material never leave Ledgerly.
+
 ## Separation of concerns
 
 - **Ledgerly** owns vault unlock, origin permissions, human approval, and cryptographic signing.
