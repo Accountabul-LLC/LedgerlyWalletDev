@@ -69,7 +69,7 @@ import {
   buildTrustSet,
   sanitizeDappTransaction,
 } from '../xrpl/transaction';
-import { ApprovalQueue } from './approvals';
+import { ApprovalQueue, ApprovalRejected } from './approvals';
 import { ProviderError } from './provider-errors';
 
 export interface ProviderEvent {
@@ -1251,10 +1251,12 @@ export class WalletEngine {
         (await grantedAccounts()).map((account) => account.address),
 
       requestAccounts: async (input?: { network?: ProviderNetworkId }) => {
-        if (input?.network) await this.ensureProviderNetwork(input.network);
+        if (input?.network) this.assertProviderNetwork(input.network);
 
         const existing = await grantedAccounts();
         if (existing.length > 0) {
+          // Already authorized — network change is allowed without a new prompt.
+          if (input?.network) await this.ensureProviderNetwork(input.network);
           await this.permissions.touch(origin);
           return existing.map((account) => account.address);
         }
@@ -1395,7 +1397,7 @@ export class WalletEngine {
         'Finish backing up your recovery phrase in Ledgerly before connecting.',
       );
     }
-    if (input.network) await this.ensureProviderNetwork(input.network);
+    if (input.network) this.assertProviderNetwork(input.network);
 
     const known = await this.permissions.isKnown(input.origin);
     const assessment = assessSite(input.hostname, input.isSecure, known);
@@ -1413,6 +1415,9 @@ export class WalletEngine {
       throw new ProviderError('user_rejected', 'The request was declined.');
     }
 
+    // Switch only after the user approved sharing accounts with this origin.
+    if (input.network) await this.ensureProviderNetwork(input.network);
+
     const payload = this.requirePayload();
     const allowed = await this.permissions.allowedAccounts(
       input.origin,
@@ -1429,7 +1434,7 @@ export class WalletEngine {
     return accounts;
   }
 
-  private async ensureProviderNetwork(network: ProviderNetworkId): Promise<void> {
+  private assertProviderNetwork(network: ProviderNetworkId): string {
     const localId = PROVIDER_NETWORK_TO_LOCAL[network];
     if (!localId) {
       throw new ProviderError(
@@ -1437,6 +1442,11 @@ export class WalletEngine {
         'Only xrpl:testnet and xrpl:devnet are supported for Ledgerly Connect.',
       );
     }
+    return localId;
+  }
+
+  private async ensureProviderNetwork(network: ProviderNetworkId): Promise<void> {
+    const localId = this.assertProviderNetwork(network);
     if (this.activeNetwork().id === localId) return;
     await this.setNetwork({ networkId: localId });
     this.emitProviderEvent({
@@ -1463,7 +1473,7 @@ export class WalletEngine {
     if (utf8ToBytes(input.message).byteLength > MAX_SIGN_MESSAGE_BYTES) {
       throw new ProviderError('invalid_request', 'That message is too long to sign.');
     }
-    if (input.network) await this.ensureProviderNetwork(input.network);
+    if (input.network) this.assertProviderNetwork(input.network);
 
     const payload = this.requirePayload();
     const allowed = await this.permissions.allowedAccounts(
@@ -1499,6 +1509,9 @@ export class WalletEngine {
     if (!outcome.approved) {
       throw new ProviderError('user_rejected', 'The request was declined.');
     }
+
+    // Apply the requested network only after the user approved the signature.
+    if (input.network) await this.ensureProviderNetwork(input.network);
 
     const signed = this.keyring.signMessage(account.id, input.message);
     await this.permissions.touch(origin);
@@ -1616,7 +1629,16 @@ export class WalletEngine {
   private async enqueueApproval(request: ApprovalRequest) {
     const promise = this.approvals.enqueue(request);
     this.options.onApprovalRequested?.();
-    return promise;
+    try {
+      return await promise;
+    } catch (error) {
+      // Decline / timeout / lock reject the queue with ApprovalRejected — map to
+      // the stable provider code sites already handle.
+      if (error instanceof ApprovalRejected) {
+        throw new ProviderError('user_rejected', error.message);
+      }
+      throw error;
+    }
   }
 
   // ------------------------------------------------------------------ helpers

@@ -258,4 +258,37 @@ describe('Ledgerly Connect provider', () => {
     expect(typeof provider.signTransaction).toBe('function');
     expect(provider.signMessage).not.toBe(provider.signTransaction);
   });
+
+  it('maps declined approvals to user_rejected and defers network switch until approve', async () => {
+    const events: Array<{ event: string }> = [];
+    const { engine } = await unlockedEngine({
+      onProviderEvent: (event) => events.push(event as { event: string }),
+    });
+    await engine.setNetwork({ networkId: 'devnet' });
+    expect((await engine.getState()).network.id).toBe('devnet');
+
+    const provider = engine.provider(SITE);
+    const pending = provider.requestAccounts({ network: 'xrpl:testnet' });
+    const request = await waitForApproval(engine, 'connect');
+    // Decline must not leave a silent network change behind.
+    expect((await engine.getState()).network.id).toBe('devnet');
+    expect(events.some((entry) => entry.event === 'networkChanged')).toBe(false);
+    await engine.resolveApproval({ id: request.id, approved: false });
+    await expect(pending).rejects.toMatchObject({
+      code: 'user_rejected',
+    } satisfies Partial<ProviderError>);
+    expect((await engine.getState()).network.id).toBe('devnet');
+
+    const retry = provider.requestAccounts({ network: 'xrpl:testnet' });
+    const retryRequest = await waitForApproval(engine, 'connect');
+    const accountId = (await engine.getState()).activeAccountId!;
+    await engine.resolveApproval({
+      id: retryRequest.id,
+      approved: true,
+      accountIds: [accountId],
+    });
+    await retry;
+    expect((await engine.getState()).network.id).toBe('testnet');
+    expect(events.some((entry) => entry.event === 'networkChanged')).toBe(true);
+  });
 });
