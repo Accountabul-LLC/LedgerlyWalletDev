@@ -23,11 +23,15 @@ export function Approval({
   /** False while a newly shown request is still settling, to absorb stray clicks. */
   interactive?: boolean;
 }) {
-  return request.kind === 'connect' ? (
-    <ConnectApproval request={request} onResolved={onResolved} interactive={interactive} />
-  ) : (
-    <SignApproval request={request} onResolved={onResolved} interactive={interactive} />
-  );
+  if (request.kind === 'connect') {
+    return <ConnectApproval request={request} onResolved={onResolved} interactive={interactive} />;
+  }
+  if (request.kind === 'signMessage') {
+    return (
+      <SignMessageApproval request={request} onResolved={onResolved} interactive={interactive} />
+    );
+  }
+  return <SignApproval request={request} onResolved={onResolved} interactive={interactive} />;
 }
 
 function ConnectApproval({
@@ -120,6 +124,94 @@ function ConnectApproval({
           onClick={() => void respond.run(true).catch(() => undefined)}
         >
           Connect
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function SignMessageApproval({
+  request,
+  onResolved,
+  interactive,
+}: {
+  request: Extract<ApprovalRequest, { kind: 'signMessage' }>;
+  onResolved: () => void;
+  interactive: boolean;
+}) {
+  const { wallet, state } = useWallet();
+  const respond = useAsyncAction(async (approved: boolean) => {
+    await wallet.resolveApproval({ id: request.id, approved });
+    onResolved();
+  });
+  const account = state.accounts.find((candidate) => candidate.id === request.accountId);
+
+  return (
+    <div className="stack">
+      <div>
+        <p className="eyebrow">Signature request</p>
+        <h2 style={{ marginTop: 6 }}>Sign this message?</h2>
+        <p className="inline-note" style={{ marginTop: 6 }}>
+          This proves you control the address. It does not move funds and is not an XRPL payment.
+        </p>
+      </div>
+
+      <div className="origin-chip">
+        <ShieldIcon />
+        {request.hostname}
+      </div>
+
+      <DetailList
+        items={[
+          {
+            label: 'Account',
+            value: `${account?.label ?? 'Unknown'} · ${shortenAddress(request.address)}`,
+          },
+          { label: 'Network', value: state.network.label },
+        ]}
+      />
+
+      <pre
+        className="mono"
+        style={{
+          margin: 0,
+          padding: 12,
+          borderRadius: 12,
+          background: 'var(--surface-sunken)',
+          border: '1px solid var(--line)',
+          fontSize: 11,
+          lineHeight: 1.5,
+          maxHeight: 220,
+          overflow: 'auto',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+        }}
+      >
+        {request.message}
+      </pre>
+
+      <Callout tone="info">
+        Only approve messages from sites you trust. A signed challenge lets that site link this
+        address to your account there.
+      </Callout>
+
+      {respond.error ? <Callout tone="danger">{respond.error}</Callout> : null}
+
+      <div className="button-row">
+        <Button
+          variant="secondary"
+          disabled={respond.pending || !interactive}
+          onClick={() => void respond.run(false).catch(() => undefined)}
+        >
+          Reject
+        </Button>
+        <Button
+          variant="accent"
+          loading={respond.pending}
+          disabled={!interactive}
+          onClick={() => void respond.run(true).catch(() => undefined)}
+        >
+          Sign
         </Button>
       </div>
     </div>

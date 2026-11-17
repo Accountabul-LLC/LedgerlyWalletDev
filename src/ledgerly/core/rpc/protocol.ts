@@ -92,6 +92,11 @@ export interface WalletState {
    */
   readonly sessionExpiresAt: number | null;
   readonly pendingApprovals: number;
+  /**
+   * A site asked to connect while the vault was locked or not yet created.
+   * The popup shows unlock/onboarding, then the connect approval.
+   */
+  readonly pendingSiteConnect: { readonly origin: string; readonly hostname: string } | null;
 }
 
 export interface Portfolio {
@@ -144,7 +149,42 @@ export type ApprovalRequest =
       readonly description: TransactionDescription;
       readonly submit: boolean;
       readonly createdAt: number;
+    }
+  | {
+      readonly id: string;
+      readonly kind: 'signMessage';
+      readonly origin: string;
+      readonly hostname: string;
+      readonly accountId: string;
+      readonly address: string;
+      /** Exact UTF-8 string the site asked to have signed; shown to the user. */
+      readonly message: string;
+      readonly createdAt: number;
     };
+
+/** CAIP-2 style network ids Accountabul passes into the provider. */
+export type ProviderNetworkId = 'xrpl:testnet' | 'xrpl:devnet';
+
+/** Proof returned by {@link ProviderApi.signMessage}. */
+export interface SignedMessage {
+  readonly address: string;
+  readonly publicKey: string;
+  readonly signature: string;
+  readonly algorithm: SecretAlgorithm;
+  /** The exact string that was signed (for debugging; verifiers rebuild it). */
+  readonly message: string;
+}
+
+/** Compact status for dApp detection without prompting. */
+export interface ProviderStatus {
+  readonly setup: boolean;
+  readonly unlocked: boolean;
+  /** True when this origin already has a non-empty account grant. */
+  readonly authorized: boolean;
+  readonly networkId: string;
+  readonly chainId: number;
+  readonly isTest: boolean;
+}
 
 /**
  * Methods reachable only from the extension's own pages.
@@ -269,11 +309,28 @@ export interface WalletApi {
  */
 export interface ProviderApi {
   ping(): Promise<{ version: string }>;
+  /** Detection helper: vault setup, unlock, and whether this origin is granted. */
+  getStatus(): Promise<ProviderStatus>;
+  /** True when the vault is unlocked in this session. */
+  isUnlocked(): Promise<boolean>;
   getNetwork(): Promise<{ networkId: string; label: string; chainId: number; isTest: boolean }>;
-  /** Resolves to already-granted accounts, or opens an approval window. */
-  requestAccounts(): Promise<{ accounts: readonly string[] }>;
-  /** Returns granted accounts without prompting; empty when not connected. */
-  getAccounts(): Promise<{ accounts: readonly string[] }>;
+  /**
+   * Resolves to already-granted classic addresses, or opens an approval window.
+   * Returns a bare address array (Accountabul / EIP-1193 style).
+   */
+  requestAccounts(input?: { network?: ProviderNetworkId }): Promise<readonly string[]>;
+  /** Returns granted accounts without prompting; empty when not connected or locked. */
+  getAccounts(): Promise<readonly string[]>;
+  /**
+   * Signs a UTF-8 ownership/challenge message after explicit user approval.
+   * secp256k1: ECDSA(SHA-256(message)), IEEE-P1363. ed25519: raw message bytes.
+   * Not an XRPL payment transaction.
+   */
+  signMessage(input: {
+    address: string;
+    message: string;
+    network?: ProviderNetworkId;
+  }): Promise<SignedMessage>;
   signTransaction(input: { address: string; transaction: Transaction }): Promise<{
     txBlob: string;
     hash: string;
@@ -350,9 +407,12 @@ export function isWalletMethod(value: unknown): value is WalletMethod {
 
 export const PROVIDER_METHODS: readonly ProviderMethod[] = [
   'ping',
+  'getStatus',
+  'isUnlocked',
   'getNetwork',
   'requestAccounts',
   'getAccounts',
+  'signMessage',
   'signTransaction',
   'signAndSubmit',
   'disconnect',

@@ -32,3 +32,4 @@ export * from './storage/session';
 
 export { WalletEngine, type EngineOptions } from './engine/engine';
 export { ApprovalQueue, ApprovalRejected, type ApprovalOutcome } from './engine/approvals';
+export { ProviderError, type ProviderErrorCode } from './engine/provider-errors';

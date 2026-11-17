@@ -48,6 +48,13 @@ export function Unlock() {
         </p>
       </div>
 
+      {state.pendingSiteConnect ? (
+        <Callout tone="info" title="Site connection waiting">
+          {state.pendingSiteConnect.hostname} asked to connect. Unlock to review and choose which
+          address to share. The site cannot see your keys or sign anything until you approve.
+        </Callout>
+      ) : null}
+
       <form
         onSubmit={(event) => {
           event.preventDefault();

@@ -2,6 +2,8 @@ import {
   WalletEngine,
   isProviderMethod,
   isWalletMethod,
+  ProviderError,
+  type ProviderEvent,
   type RpcRequest,
   type RpcResponse,
 } from '@ledgerly/core';
@@ -24,6 +26,9 @@ const engine = new WalletEngine({
   onApprovalRequested: () => {
     broadcast({ event: 'stateChanged', payload: null });
     void openApprovalWindow();
+  },
+  onProviderEvent: (event) => {
+    void notifyTabs(event);
   },
 });
 
@@ -96,7 +101,7 @@ async function handleWallet(request: RpcRequest): Promise<RpcResponse> {
     );
     return { id: request.id, ok: true, result: result ?? null };
   } catch (error) {
-    return failure(request.id, messageOf(error));
+    return failure(request.id, messageOf(error), codeOf(error));
   }
 }
 
@@ -115,16 +120,22 @@ async function handleProvider(
     );
     return { id: request.id, ok: true, result: result ?? null };
   } catch (error) {
-    return failure(request.id, messageOf(error));
+    return failure(request.id, messageOf(error), codeOf(error));
   }
 }
 
-function failure(id: string, message: string): RpcResponse {
-  return { id, ok: false, error: { code: 'wallet_error', message } };
+function failure(id: string, message: string, code = 'wallet_error'): RpcResponse {
+  return { id, ok: false, error: { code, message } };
 }
 
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : 'Something went wrong.';
+}
+
+function codeOf(error: unknown): string {
+  if (error instanceof ProviderError) return error.code;
+  if (error instanceof Error && error.name && error.name !== 'Error') return error.name;
+  return 'wallet_error';
 }
 
 /** Extension pages listen for these; a missing receiver is not an error worth surfacing. */
@@ -133,6 +144,33 @@ function broadcast(event: { event: string; payload: unknown }): void {
     chrome.runtime.sendMessage(event, () => void chrome.runtime.lastError);
   } catch {
     /* no extension page is open */
+  }
+}
+
+async function notifyTabs(event: ProviderEvent): Promise<void> {
+  try {
+    const tabs = await chrome.tabs.query({});
+    for (const tab of tabs) {
+      if (typeof tab.id !== 'number' || typeof tab.url !== 'string') continue;
+      if (event.origin) {
+        try {
+          if (new URL(tab.url).origin !== event.origin) continue;
+        } catch {
+          continue;
+        }
+      }
+      try {
+        await chrome.tabs.sendMessage(tab.id, {
+          channel: 'provider-event',
+          event: event.event,
+          payload: event.payload,
+        });
+      } catch {
+        /* tab has no content script */
+      }
+    }
+  } catch {
+    /* tabs permission edge cases */
   }
 }
 

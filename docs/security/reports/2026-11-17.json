@@ -1,11 +1,73 @@
 {
   "date": "2026-11-17",
-  "generatedAt": "2026-11-17T15:55:35.687Z",
-  "status": "unchanged",
-  "headline": "",
-  "summary": "No file that handles your keys, your recovery phrase or your transactions changed today. The wallet behaves exactly as it did in the last published audit.",
-  "filesWatched": 121,
-  "changes": [],
-  "areas": [],
+  "generatedAt": "2026-11-17T20:14:13.488Z",
+  "status": "changed",
+  "headline": "Changes in 5 areas of the code that protects your keys.",
+  "summary": "10 security-sensitive files changed today, covering the browser extension, the approval and signing flow, key generation and signing, the wallet message surface and the wallet screens. 1 more file is now watched every day. Every change is in the code we publish, so you can read the difference yourself in the audit repository.",
+  "filesWatched": 122,
+  "changes": [
+    {
+      "path": "extension/manifest.json",
+      "kind": "modified",
+      "area": "the browser extension"
+    },
+    {
+      "path": "extension/src/background.ts",
+      "kind": "modified",
+      "area": "the browser extension"
+    },
+    {
+      "path": "extension/src/content.ts",
+      "kind": "modified",
+      "area": "the browser extension"
+    },
+    {
+      "path": "extension/src/inpage.ts",
+      "kind": "modified",
+      "area": "the browser extension"
+    },
+    {
+      "path": "src/ledgerly/core/engine/engine.ts",
+      "kind": "modified",
+      "area": "the approval and signing flow"
+    },
+    {
+      "path": "src/ledgerly/core/engine/provider-errors.ts",
+      "kind": "now watched",
+      "area": "the approval and signing flow"
+    },
+    {
+      "path": "src/ledgerly/core/keyring/keyring.ts",
+      "kind": "modified",
+      "area": "key generation and signing"
+    },
+    {
+      "path": "src/ledgerly/core/rpc/protocol.ts",
+      "kind": "modified",
+      "area": "the wallet message surface"
+    },
+    {
+      "path": "src/ledgerly/ui/views/Approval.tsx",
+      "kind": "modified",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/views/Onboarding.tsx",
+      "kind": "modified",
+      "area": "the wallet screens"
+    },
+    {
+      "path": "src/ledgerly/ui/views/Unlock.tsx",
+      "kind": "modified",
+      "area": "the wallet screens"
+    }
+  ],
+  "areas": [
+    "the browser extension",
+    "the approval and signing flow",
+    "key generation and signing",
+    "the wallet message surface",
+    "the wallet screens"
+  ],
   "fullAudit": "2026-08-31-full-security-audit.md"
 }
