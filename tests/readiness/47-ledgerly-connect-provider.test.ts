@@ -246,9 +246,7 @@ describe('Ledgerly Connect provider', () => {
     expect(events.some((entry) => entry.event === 'accountsChanged')).toBe(true);
     await provider.disconnect();
     expect(events.some((entry) => entry.event === 'disconnect')).toBe(true);
-    expect(
-      events.filter((entry) => entry.event === 'accountsChanged').at(-1)?.payload,
-    ).toEqual([]);
+    expect(events.filter((entry) => entry.event === 'accountsChanged').at(-1)?.payload).toEqual([]);
     expect((await provider.getStatus()).authorized).toBe(false);
     expect(accounts).toHaveLength(1);
   });

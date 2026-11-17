@@ -57,9 +57,7 @@ window.addEventListener('message', (event: MessageEvent) => {
 });
 
 chrome.runtime.onMessage.addListener((message) => {
-  const event = message as
-    | { channel?: string; event?: string; payload?: unknown }
-    | undefined;
+  const event = message as { channel?: string; event?: string; payload?: unknown } | undefined;
   if (!event || event.channel !== 'provider-event' || typeof event.event !== 'string') return;
   window.postMessage(
     {

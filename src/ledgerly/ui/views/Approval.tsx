@@ -24,9 +24,7 @@ export function Approval({
   interactive?: boolean;
 }) {
   if (request.kind === 'connect') {
-    return (
-      <ConnectApproval request={request} onResolved={onResolved} interactive={interactive} />
-    );
+    return <ConnectApproval request={request} onResolved={onResolved} interactive={interactive} />;
   }
   if (request.kind === 'signMessage') {
     return (

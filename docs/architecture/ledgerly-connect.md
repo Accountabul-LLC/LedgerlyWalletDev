@@ -24,19 +24,19 @@ const ready = Boolean(window.ledgerly?.isLedgerly);
 
 ### Methods (Accountabul Phase 1)
 
-| Method | Returns | Notes |
-| --- | --- | --- |
-| `isLedgerly` | `true` | Required detection flag |
-| `isUnlocked()` | `boolean` | Optional for Accountabul; implemented |
-| `getStatus()` | `{ setup, unlocked, authorized, networkId, chainId, isTest }` | Non-prompting |
-| `getNetwork()` | Active XRPL network metadata | |
-| `getAccounts()` | `string[]` | Classic addresses; empty when locked/unauthorized |
-| `requestAccounts({ network? })` | `string[]` | `network`: `xrpl:testnet` \| `xrpl:devnet` |
-| `signMessage({ message, address, network })` | `{ signature, publicKey, address, algorithm }` | Also includes `message` for debugging |
-| `signTransaction` / `signAndSubmit` | XRPL tx paths | Still require per-request approval |
-| `disconnect()` | `void` | Revokes grant; emits `disconnect` / `accountsChanged` |
-| `on` / `removeListener` | — | `accountsChanged`, `disconnect`, `networkChanged` |
-| `request({ method, params })` | same allowlist | Accountabul falls back to `method: "signMessage"` only if needed |
+| Method                                       | Returns                                                       | Notes                                                            |
+| -------------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `isLedgerly`                                 | `true`                                                        | Required detection flag                                          |
+| `isUnlocked()`                               | `boolean`                                                     | Optional for Accountabul; implemented                            |
+| `getStatus()`                                | `{ setup, unlocked, authorized, networkId, chainId, isTest }` | Non-prompting                                                    |
+| `getNetwork()`                               | Active XRPL network metadata                                  |                                                                  |
+| `getAccounts()`                              | `string[]`                                                    | Classic addresses; empty when locked/unauthorized                |
+| `requestAccounts({ network? })`              | `string[]`                                                    | `network`: `xrpl:testnet` \| `xrpl:devnet`                       |
+| `signMessage({ message, address, network })` | `{ signature, publicKey, address, algorithm }`                | Also includes `message` for debugging                            |
+| `signTransaction` / `signAndSubmit`          | XRPL tx paths                                                 | Still require per-request approval                               |
+| `disconnect()`                               | `void`                                                        | Revokes grant; emits `disconnect` / `accountsChanged`            |
+| `on` / `removeListener`                      | —                                                             | `accountsChanged`, `disconnect`, `networkChanged`                |
+| `request({ method, params })`                | same allowlist                                                | Accountabul falls back to `method: "signMessage"` only if needed |
 
 ### Error codes (`Error.name`)
 

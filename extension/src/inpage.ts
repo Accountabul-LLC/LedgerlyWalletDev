@@ -36,8 +36,7 @@ window.addEventListener('message', (event: MessageEvent) => {
     pending.delete(data.id);
 
     const payload = data.payload as
-      | { ok: true; result: unknown }
-      | { ok: false; error: { code: string; message: string } };
+      { ok: true; result: unknown } | { ok: false; error: { code: string; message: string } };
     if (payload?.ok) {
       call.resolve(payload.result);
     } else {

@@ -31,10 +31,10 @@ Accountabul and Ledgerly stay **separate products**. Connect is browser-provider
 
 ### Ready branches (2026-11-17)
 
-| Repo | Branch | Head | Gate |
-| --- | --- | --- | --- |
-| LedgerlyWalletDev | `cursor/ledgerly-connect-provider-96a4` | `6ed06a7064831a7ac0b5a34538ed45433a23d257` (+ docs commit on tip) | provider tests 7/7 |
-| accountabul-final | `cursor/ledgerly-connect-accountabul-96a4` | `f6acfa694d492778e6348dcd165d807a976af9e4` | gate 1059 pass; rebased on `main` `b434761` |
+| Repo              | Branch                                     | Head                                                              | Gate                                        |
+| ----------------- | ------------------------------------------ | ----------------------------------------------------------------- | ------------------------------------------- |
+| LedgerlyWalletDev | `cursor/ledgerly-connect-provider-96a4`    | `6ed06a7064831a7ac0b5a34538ed45433a23d257` (+ docs commit on tip) | provider tests 7/7                          |
+| accountabul-final | `cursor/ledgerly-connect-accountabul-96a4` | `f6acfa694d492778e6348dcd165d807a976af9e4`                        | gate 1059 pass; rebased on `main` `b434761` |
 
 Contract:
 
