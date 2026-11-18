@@ -1,5 +1,11 @@
 [
   {
+    "date": "2026-11-18",
+    "status": "unchanged",
+    "headline": "",
+    "file": "2026-11-18.md"
+  },
+  {
     "date": "2026-11-17",
     "status": "changed",
     "headline": "Changes in 5 areas of the code that protects your keys.",
