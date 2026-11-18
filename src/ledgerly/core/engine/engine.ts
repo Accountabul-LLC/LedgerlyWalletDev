@@ -1255,8 +1255,19 @@ export class WalletEngine {
 
         const existing = await grantedAccounts();
         if (existing.length > 0) {
-          // Already authorized — network change is allowed without a new prompt.
-          if (input?.network) await this.ensureProviderNetwork(input.network);
+          // Already authorized for accounts. A different network is still a
+          // wallet-wide change, so it waits for its own approval and is saved
+          // only if the user accepts it.
+          if (
+            input?.network &&
+            this.activeNetwork().id !== this.assertProviderNetwork(input.network)
+          ) {
+            await this.approveNetworkSwitch({
+              origin,
+              hostname,
+              network: input.network,
+            });
+          }
           await this.permissions.touch(origin);
           return existing.map((account) => account.address);
         }
@@ -1408,6 +1419,7 @@ export class WalletEngine {
       hostname: input.hostname,
       findings: assessment.findings,
       createdAt: Date.now(),
+      ...(input.network ? { network: input.network } : {}),
     };
 
     const outcome = await this.enqueueApproval(request);
@@ -1434,15 +1446,37 @@ export class WalletEngine {
     return accounts;
   }
 
+  /**
+   * Asks before changing the wallet's network for a site that already has a grant.
+   * Decline, timeout, and disconnect leave the saved network where it was.
+   */
+  private async approveNetworkSwitch(input: {
+    origin: string;
+    hostname: string;
+    network: ProviderNetworkId;
+  }): Promise<void> {
+    const outcome = await this.enqueueApproval({
+      id: newId(),
+      kind: 'switchNetwork',
+      origin: input.origin,
+      hostname: input.hostname,
+      network: input.network,
+      createdAt: Date.now(),
+    });
+    if (!outcome.approved) {
+      throw new ProviderError('user_rejected', 'The request was declined.');
+    }
+    await this.ensureProviderNetwork(input.network);
+  }
+
   private assertProviderNetwork(network: ProviderNetworkId): string {
-    const localId = PROVIDER_NETWORK_TO_LOCAL[network];
-    if (!localId) {
+    if (network !== 'xrpl:testnet' && network !== 'xrpl:devnet') {
       throw new ProviderError(
         'invalid_request',
         'Only xrpl:testnet and xrpl:devnet are supported for Ledgerly Connect.',
       );
     }
-    return localId;
+    return PROVIDER_NETWORK_TO_LOCAL[network];
   }
 
   private async ensureProviderNetwork(network: ProviderNetworkId): Promise<void> {
@@ -1505,6 +1539,7 @@ export class WalletEngine {
       address: account.address,
       message: input.message,
       createdAt: Date.now(),
+      ...(input.network ? { network: input.network } : {}),
     });
     if (!outcome.approved) {
       throw new ProviderError('user_rejected', 'The request was declined.');

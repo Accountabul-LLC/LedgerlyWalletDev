@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import { highestRisk, shortenAddress, type ApprovalRequest } from '@ledgerly/core/shared';
+import {
+  highestRisk,
+  shortenAddress,
+  type ApprovalRequest,
+  type ProviderNetworkId,
+} from '@ledgerly/core/shared';
 import { useWallet } from '../context';
 import { useAsyncAction } from '../store';
 import { Button, Callout, DetailList, RiskFindings } from '../components/primitives';
@@ -26,12 +31,26 @@ export function Approval({
   if (request.kind === 'connect') {
     return <ConnectApproval request={request} onResolved={onResolved} interactive={interactive} />;
   }
+  if (request.kind === 'switchNetwork') {
+    return (
+      <SwitchNetworkApproval request={request} onResolved={onResolved} interactive={interactive} />
+    );
+  }
   if (request.kind === 'signMessage') {
     return (
       <SignMessageApproval request={request} onResolved={onResolved} interactive={interactive} />
     );
   }
   return <SignApproval request={request} onResolved={onResolved} interactive={interactive} />;
+}
+
+/** Labels for the only networks a site is allowed to request. */
+function providerNetworkLabel(network: ProviderNetworkId): string {
+  return network === 'xrpl:testnet' ? 'Testnet' : 'Devnet';
+}
+
+function providerNetworkLocalId(network: ProviderNetworkId): string {
+  return network === 'xrpl:testnet' ? 'testnet' : 'devnet';
 }
 
 function ConnectApproval({
@@ -74,6 +93,16 @@ function ConnectApproval({
       </div>
 
       <RiskFindings findings={request.findings} />
+
+      {request.network ? (
+        <DetailList items={[{ label: 'Network', value: providerNetworkLabel(request.network) }]} />
+      ) : null}
+      {request.network && providerNetworkLocalId(request.network) !== state.network.id ? (
+        <Callout tone="info">
+          Approving also switches this wallet from {state.network.label} to{' '}
+          {providerNetworkLabel(request.network)}.
+        </Callout>
+      ) : null}
 
       <div>
         <p className="eyebrow" style={{ marginBottom: 8 }}>
@@ -145,6 +174,11 @@ function SignMessageApproval({
     onResolved();
   });
   const account = state.accounts.find((candidate) => candidate.id === request.accountId);
+  const networkLabel = request.network
+    ? providerNetworkLabel(request.network)
+    : state.network.label;
+  const switchesNetwork =
+    request.network !== undefined && providerNetworkLocalId(request.network) !== state.network.id;
 
   return (
     <div className="stack">
@@ -167,9 +201,15 @@ function SignMessageApproval({
             label: 'Account',
             value: `${account?.label ?? 'Unknown'} · ${shortenAddress(request.address)}`,
           },
-          { label: 'Network', value: state.network.label },
+          { label: 'Network', value: networkLabel },
         ]}
       />
+
+      {switchesNetwork ? (
+        <Callout tone="info">
+          Approving also switches this wallet from {state.network.label} to {networkLabel}.
+        </Callout>
+      ) : null}
 
       <pre
         className="mono"
@@ -212,6 +252,73 @@ function SignMessageApproval({
           onClick={() => void respond.run(true).catch(() => undefined)}
         >
           Sign
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function SwitchNetworkApproval({
+  request,
+  onResolved,
+  interactive,
+}: {
+  request: Extract<ApprovalRequest, { kind: 'switchNetwork' }>;
+  onResolved: () => void;
+  interactive: boolean;
+}) {
+  const { wallet, state } = useWallet();
+  const respond = useAsyncAction(async (approved: boolean) => {
+    await wallet.resolveApproval({ id: request.id, approved });
+    onResolved();
+  });
+  const target = providerNetworkLabel(request.network);
+
+  return (
+    <div className="stack">
+      <div>
+        <p className="eyebrow">Network change</p>
+        <h2 style={{ marginTop: 6 }}>Switch to {target}?</h2>
+        <p className="inline-note" style={{ marginTop: 6 }}>
+          This site wants Ledgerly to use {target}. That changes the network for the whole wallet,
+          not only this site.
+        </p>
+      </div>
+
+      <div className="origin-chip">
+        <ShieldIcon />
+        {request.hostname}
+      </div>
+
+      <DetailList
+        items={[
+          { label: 'Current network', value: state.network.label },
+          { label: 'Requested network', value: target },
+        ]}
+      />
+
+      <Callout tone="info">
+        Declining leaves the wallet on {state.network.label}. Approving switches it to {target} and
+        saves that choice on this device.
+      </Callout>
+
+      {respond.error ? <Callout tone="danger">{respond.error}</Callout> : null}
+
+      <div className="button-row">
+        <Button
+          variant="secondary"
+          disabled={respond.pending || !interactive}
+          onClick={() => void respond.run(false).catch(() => undefined)}
+        >
+          Reject
+        </Button>
+        <Button
+          variant="accent"
+          loading={respond.pending}
+          disabled={!interactive}
+          onClick={() => void respond.run(true).catch(() => undefined)}
+        >
+          Switch to {target}
         </Button>
       </div>
     </div>

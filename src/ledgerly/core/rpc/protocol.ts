@@ -136,6 +136,20 @@ export type ApprovalRequest =
       readonly origin: string;
       readonly hostname: string;
       readonly findings: readonly RiskFinding[];
+      /**
+       * Network the site asked to use, when it sent one. Shown before any
+       * switch is saved. Absent when the site did not request a network.
+       */
+      readonly network?: ProviderNetworkId;
+      readonly createdAt: number;
+    }
+  | {
+      readonly id: string;
+      readonly kind: 'switchNetwork';
+      readonly origin: string;
+      readonly hostname: string;
+      /** Test network the site wants this wallet to use. Mainnet is never offered. */
+      readonly network: ProviderNetworkId;
       readonly createdAt: number;
     }
   | {
@@ -159,6 +173,11 @@ export type ApprovalRequest =
       readonly address: string;
       /** Exact UTF-8 string the site asked to have signed; shown to the user. */
       readonly message: string;
+      /**
+       * Network the site asked to use, when it sent one. Shown before any
+       * switch is saved.
+       */
+      readonly network?: ProviderNetworkId;
       readonly createdAt: number;
     };
 
@@ -317,6 +336,10 @@ export interface ProviderApi {
   /**
    * Resolves to already-granted classic addresses, or opens an approval window.
    * Returns a bare address array (Accountabul / EIP-1193 style).
+   *
+   * `network` may be `xrpl:testnet` or `xrpl:devnet`. A value that differs from
+   * the wallet's current network is applied only after the user approves that
+   * switch. Mainnet cannot be selected through this method.
    */
   requestAccounts(input?: { network?: ProviderNetworkId }): Promise<readonly string[]>;
   /** Returns granted accounts without prompting; empty when not connected or locked. */
